@@ -4,6 +4,7 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+- Clearer message when the server has reached its hourly limit for sending emails.
 
 ## v5.0.0 (2026-11-12)
 ### Public web platform

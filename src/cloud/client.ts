@@ -38,6 +38,7 @@ export function explain(e: unknown): string {
   if (/row-level security|violates row-level/i.test(m)) return 'Your plan limit is reached (projects, presets or storage).';
   if (/Payload too large|exceeded the maximum allowed size/i.test(m)) return 'That file is larger than your plan allows.';
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'No connection to the AirFx server. Check your internet connection.';
-  if (/rate limit/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
+  if (/email rate limit|over_email_send_rate_limit/i.test(m)) return 'AirFx cannot send more emails right now (the server’s hourly email limit). Try again later, or log in if you already have an account.';
+  if (/rate limit|too many requests/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
   return m;
 }
