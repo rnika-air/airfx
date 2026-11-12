@@ -1,0 +1,32 @@
+# Dependencies and builds
+node_modules
+dist
+*.tsbuildinfo
+# Generated from node_modules by scripts/copy-ort.mjs
+public/ort
+
+# Secrets: never commit these. Use .env.example as the template.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+supabase/.temp
+supabase/.branches
+
+# Kept on this PC only, not in the public repository
+ae-plugin/
+test-footage/
+.claude/
+Start AirFx.bat
+
+# Editors and systems
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Local test tools (not part of the app)
+.tools/
+dist-cloudtest

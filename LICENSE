@@ -1,0 +1,9 @@
+Copyright (c) 2026 the AirFx authors. All rights reserved.
+
+The source code in this repository is published for reference only. No
+permission is granted to use, copy, modify, merge, publish, distribute,
+sublicense or sell copies of it, in whole or in part, without the prior
+written permission of the copyright holder.
+
+Third-party components keep their own licenses (see package.json and the
+model notices in README.md).

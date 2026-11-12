@@ -1,0 +1,31 @@
+# Checks every push and pull request: types, the normal build, and the
+# Cloudflare build (which must have no file over 25 MiB).
+name: CI
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Build (local mode, no backend)
+        run: npm run build
+      - name: Build for Cloudflare Pages
+        run: npm run build
+        env:
+          AIRFX_ORT_SOURCE: cdn
+      - name: Service worker and manifest are present
+        run: test -s dist/sw.js && test -s dist/manifest.webmanifest

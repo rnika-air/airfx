@@ -1,0 +1,40 @@
+# Every push to main deploys a preview to Cloudflare Pages (its own URL, not the
+# public site). The public site only changes when a release is published.
+name: Preview
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: preview
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Skipped until Cloudflare is configured (see docs/DEPLOYMENT.md).
+    if: ${{ vars.CLOUDFLARE_PAGES_PROJECT != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          AIRFX_ORT_SOURCE: cdn
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_REQUIRE_ACCOUNT: ${{ vars.VITE_REQUIRE_ACCOUNT }}
+      - name: Deploy preview
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=preview --commit-dirty=true

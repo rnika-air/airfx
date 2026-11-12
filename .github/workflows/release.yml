@@ -1,0 +1,86 @@
+# Publishing a release: push a tag like v5.0.0 (npm run release does this).
+# 1. Applies new database migrations to the production Supabase project.
+# 2. Builds the production site.
+# 3. Creates the GitHub Release with notes from CHANGELOG.md and the built site attached.
+# 4. Deploys the build to the public site on Cloudflare Pages.
+name: Release
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)release, e.g. v5.0.0
+        required: true
+
+permissions:
+  contents: write
+  deployments: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    if: ${{ vars.SUPABASE_PROJECT_REF != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Apply database migrations
+        run: |
+          supabase link --project-ref "${{ vars.SUPABASE_PROJECT_REF }}" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+  release:
+    runs-on: ubuntu-latest
+    needs: migrate
+    # Runs when migrations succeeded, or when there is no database to migrate yet.
+    if: ${{ !cancelled() && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check the tag matches package.json
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if [ "$v" != "$TAG" ]; then echo "Tag $TAG does not match package.json ($v)"; exit 1; fi
+      - run: npm run typecheck
+      - name: Build
+        run: npm run build
+        env:
+          AIRFX_ORT_SOURCE: cdn
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_REQUIRE_ACCOUNT: ${{ vars.VITE_REQUIRE_ACCOUNT }}
+      - name: Release notes from CHANGELOG.md
+        run: node scripts/release-notes.mjs "$TAG" > release-notes.md
+      - name: Package the built site
+        run: cd dist && zip -qr "../airfx-web-$TAG.zip" . && cd ..
+      - name: Create GitHub Release
+        run: gh release create "$TAG" "airfx-web-$TAG.zip" --title "AirFx $TAG" --notes-file release-notes.md --verify-tag || gh release upload "$TAG" "airfx-web-$TAG.zip" --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Deploy to the public site
+        if: ${{ vars.CLOUDFLARE_PAGES_PROJECT != '' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=main --commit-dirty=true

@@ -1,0 +1,22 @@
+{
+  "name": "AirFx Visual Effects Studio",
+  "short_name": "AirFx",
+  "description": "Experimental visual effects for images and video, in your browser.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#0b0c0b",
+  "theme_color": "#0b0c0b",
+  "categories": ["photo", "graphics", "design", "productivity"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "file_handlers": [
+    { "action": "/", "accept": { "application/x-airfx": [".airfx"] } }
+  ]
+}
