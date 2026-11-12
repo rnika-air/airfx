@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$BACKUP_PASSPHRASE" || { echo "Set the BACKUP_PASSPHRASE secret first."; exit 1; }
-          supabase link --project-ref "${{ vars.SUPABASE_PROJECT_REF }}" --password "$SUPABASE_DB_PASSWORD"
+          supabase link --project-ref "${{ vars.SUPABASE_PROJECT_REF }}"
           stamp=$(date -u +%Y-%m-%dT%H%M)
           mkdir backup
           supabase db dump --linked --password "$SUPABASE_DB_PASSWORD" -f backup/schema.sql
