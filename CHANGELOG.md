@@ -4,6 +4,7 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+- Fixed: on screens narrower than about 1700 px, the Project menu was covered by the buttons on the right and could not be clicked. The top bar now never overlaps: smaller windows hide the less important parts, and the workspace tabs scroll sideways if needed.
 - Clearer message when the server has reached its hourly limit for sending emails.
 
 ## v5.0.0 (2026-11-12)
