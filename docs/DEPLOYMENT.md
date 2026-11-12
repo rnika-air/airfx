@@ -79,7 +79,7 @@ Workflows skip their deploy, migrate and backup steps until these are set, so no
    ```bash
    npm run release -- minor --push
    ```
-   Use `patch` for fixes, `minor` for features, `major` for big changes. Without `--push` it only commits and tags locally.
+   Use `patch` for fixes, `minor` for features, `major` for big changes, or `current` to release the version already in `package.json` (the first release, 5.0.0). Without `--push` it only commits and tags locally.
 4. The **Release** workflow applies database migrations, builds, creates the GitHub Release (notes from the changelog, the built site attached) and deploys to the public site.
 5. Open apps notice the new version and offer **Reload**. Installed apps update the same way.
 

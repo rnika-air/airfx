@@ -1,5 +1,6 @@
 // Publishes a new AirFx version.
-//   npm run release -- patch|minor|major [--push]
+//   npm run release -- patch|minor|major|current [--push]
+//   (current: release the version already in package.json, e.g. the first release)
 // 1. Checks the working tree is clean and on main.
 // 2. Bumps the version in package.json (and package-lock.json).
 // 3. Turns "## Unreleased" in CHANGELOG.md into "## vX.Y.Z (date)".
@@ -15,17 +16,18 @@ const push = flags.includes('--push');
 const sh = (c) => execSync(c, { stdio: ['ignore', 'pipe', 'inherit'] }).toString().trim();
 const fail = (m) => { console.error(`release: ${m}`); process.exit(1); };
 
-if (!['patch', 'minor', 'major'].includes(kind)) fail('say patch, minor or major');
+if (!['patch', 'minor', 'major', 'current'].includes(kind)) fail('say patch, minor, major or current');
 if (sh('git status --porcelain')) fail('commit or stash your changes first');
 const branch = sh('git rev-parse --abbrev-ref HEAD');
 if (branch !== 'main') fail(`releases are made from main (you are on ${branch})`);
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const [ma, mi, pa] = pkg.version.split('.').map(Number);
-const next = kind === 'major' ? `${ma + 1}.0.0` : kind === 'minor' ? `${ma}.${mi + 1}.0` : `${ma}.${mi}.${pa + 1}`;
+const next = kind === 'current' ? pkg.version : kind === 'major' ? `${ma + 1}.0.0` : kind === 'minor' ? `${ma}.${mi + 1}.0` : `${ma}.${mi}.${pa + 1}`;
 
 const log = readFileSync('CHANGELOG.md', 'utf8');
 const m = log.match(/## Unreleased\s*\n([\s\S]*?)(?=\n## |$)/);
+if (sh(`git tag -l v${next}`)) fail(`v${next} is already tagged`);
 if (!m || !m[1].trim()) fail('CHANGELOG.md has nothing under "## Unreleased": describe the release first');
 const date = new Date().toISOString().slice(0, 10);
 writeFileSync('CHANGELOG.md', log.replace(/## Unreleased\s*\n/, `## Unreleased\n\n## v${next} (${date})\n`));
