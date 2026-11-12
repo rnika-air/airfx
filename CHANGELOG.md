@@ -5,6 +5,7 @@ Each release's section becomes its GitHub Release notes. Write changes under
 
 ## Unreleased
 
+## v5.0.0 (2026-11-12)
 ### Public web platform
 - Accounts: sign up, log in, password reset by email, profile, change email and password, delete account.
 - My Projects: save projects to your account (private), open them on any device, rename and delete. Thumbnails show each project.
