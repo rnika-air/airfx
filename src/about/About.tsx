@@ -3,7 +3,7 @@ import { Wordmark } from '../components/Wordmark';
 import { LIBRARY } from '../effects/registry';
 import { previews } from '../intro/previews';
 import { LiveFx, TYPE_NAME } from '../intro/LiveFx';
-import { CONTACT, COPYRIGHT_YEAR, CREATOR } from './config';
+import { CONTACT, COPYRIGHT_YEAR, CREATOR, INTRO_TEXT } from './config';
 
 /**
  * About AirFx: an editorial information page. Desktop keeps the reference's
@@ -24,10 +24,10 @@ const FEATURES: [string, string][] = [
   ['Image Editing', 'JPG, PNG and WEBP, previewed live and exported at full resolution.'],
   ['Video Editing', 'MP4 and WEBM clips with playback, a timeline and video export.'],
   ['Experimental Effects', `${LIBRARY.filter((e) => e.category !== 'adjust').length} effects across pattern, distortion, texture, light, analog, type and motion.`],
-  ['AI-Powered Tools', 'Click-to-select objects, object removal and scene suggestions, with models that run on your device.'],
   ['Depth Mapping', 'Depth maps from a single image for focus, fog, parallax and depth-limited effects.'],
-  ['Background Removal', 'AirFx Key: AI mattes for people and objects, plus classic colour keying.'],
+  ['Background Removal', 'AirFx Key: automatic mattes for people and objects, plus classic colour keying.'],
   ['Audio-Reactive Visuals', 'Effects that follow the bass, mids, highs and beat of a song or the microphone.'],
+  ['Selection & Cleanup', 'Click to select an object, remove it, or limit any effect to it, all on your own device.'],
   ['Customizable Effects', 'Stack effects as layers, tune every parameter, and save your own presets.'],
 ];
 
@@ -95,7 +95,7 @@ export function About({ onClose }: { onClose: () => void }) {
         </Section>
 
         <Section n={2} id="info" label="Info" aside={<p className="mono">Runs in the browser<br />Installable as an app<br />Works offline once loaded</p>}>
-          <p>A creative playground for image and video processing, combining experimental effects, AI-powered tools and customizable visual workflows.</p>
+          <p>{INTRO_TEXT}</p>
           <p className="muted">Every effect renders on your own device. Your pictures and videos are not uploaded unless you choose to save them to your account.</p>
         </Section>
 

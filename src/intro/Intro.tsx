@@ -4,9 +4,10 @@ import { LIBRARY } from '../effects/registry';
 import { account, useAccount } from '../cloud/account';
 import { cloudEnabled, explain, requireAccount } from '../cloud/client';
 import { About } from '../about/About';
-import { CREATOR } from '../about/config';
+import { CREATOR, INTRO_TEXT } from '../about/config';
 import { previews, type Preview } from './previews';
 import { LiveFx, TYPE_NAME } from './LiveFx';
+import { DotField } from './DotField';
 
 /**
  * The way into AirFx: an intro screen, the log-in / sign-up screen that
@@ -77,54 +78,68 @@ function Ticker() {
   );
 }
 
+/** A hand-drawn swash through the wordmark, drawn on as the page opens. */
+function Swash() {
+  return (
+    <svg className="sp__swash" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden>
+      <path pathLength={1} d="M8 118c60-6 118-30 170-62 34-21 60-46 52-50-12-6-52 40-58 82-4 30 22 34 44 14 24-22 40-60 54-56 14 4-14 54 4 58 20 5 46-50 64-48 16 2-6 40 10 42 22 3 50-40 74-58 30-22 70-28 108-14 26 10 38 26 60 30" />
+    </svg>
+  );
+}
+
 export function Splash({ onEnter, onAuth, onAbout }: { onEnter?: () => void; onAuth: (m: AuthMode) => void; onAbout: () => void }) {
   const list = usePreviews();
   const [phase, setPhase] = useState<'intro' | 'ready'>(() => (reduced() ? 'ready' : 'intro'));
+  // The dot field ends the opening; this only guards against a page that never draws.
   useEffect(() => {
     if (phase !== 'intro') return;
-    const t = setTimeout(() => setPhase('ready'), 1700);
+    const t = setTimeout(() => setPhase('ready'), 2600);
     return () => clearTimeout(t);
   }, [phase]);
   const count = LIBRARY.filter((e) => e.category !== 'adjust').length;
+  const year = new Date().getFullYear();
 
   return (
     <div className={`sp sp--${phase}`} role="dialog" aria-modal="true" aria-label="Welcome to AirFx">
-      <div className="sp__wipe" aria-hidden><span className="mono">Experimental Visual Playground</span></div>
-      <header className="brandbar">
-        <span className="brandbar__mark mono">AIRFX <em>©{new Date().getFullYear()}</em></span>
-        <span className="brandbar__mid mono">Images · Video · Motion · Sound</span>
-        <nav className="brandbar__nav">
-          {phase === 'intro' && <button className="pill pill--ghost" onClick={() => setPhase('ready')}>Skip Intro</button>}
-          <button className="pill" onClick={onAbout}>Info</button>
-          {cloudEnabled && <button className="pill sp__hide-sm" onClick={() => onAuth('login')}>Log In</button>}
+      <DotField intro={phase === 'intro'} onDone={() => setPhase('ready')} />
+      <header className="sp__bar">
+        <span className="sp__mark mono" aria-hidden>✳ AIRFX</span>
+        <span className="sp__badge mono">Visual Playground <em>©{year}</em></span>
+        <nav className="sp__nav">
+          {phase === 'intro' && <button className="pill pill--ink pill--sm" onClick={() => setPhase('ready')}>Skip Intro</button>}
+          <button className="pill pill--ink pill--sm" onClick={onAbout}>Info</button>
+          {cloudEnabled && <button className="pill pill--ink pill--sm sp__hide-sm" onClick={() => onAuth('login')}>Log In</button>}
         </nav>
       </header>
 
       <main className="sp__main">
-        <section className="sp__copy">
-          <p className="sp__kicker mono">(01) — {count} effects, one playground</p>
-          <h1 className="sp__word"><span className="sr-only">AIRFX</span><Wordmark size="lg" /></h1>
-          <p className="sp__claim">Experimental Visual <em>Playground.</em></p>
-          <p className="sp__lead">A creative platform for transforming images and videos through experimental visual effects.</p>
-          <div className="sp__cta">
-            {onEnter && <button className="pill pill--lime pill--lg" onClick={onEnter} autoFocus>Enter AirFx <span aria-hidden>→</span></button>}
-            {cloudEnabled && <button className="pill pill--lg" onClick={() => onAuth('signup')}>Create Account</button>}
-            {cloudEnabled && <button className="pill pill--lg pill--ghost" onClick={() => onAuth('login')}>Log In</button>}
+        <section className="sp__type">
+          <h1 className="sp__word"><span className="sr-only">AIRFX</span><Wordmark size="lg" /><Swash /></h1>
+          <p className="sp__kicker mono">(01) {count} effects · images · video · motion · sound</p>
+          <div className="sp__object">
+            <LiveHero />
+            <span className="sp__sticker mono" aria-hidden>Live<br />Render</span>
           </div>
-          <p className="sp__fine mono">{onEnter ? 'No account needed to start · ' : ''}Runs in your browser · Your files stay on your device</p>
         </section>
 
-        <section className="sp__stage" aria-label="Effect previews">
-          <LiveHero />
-          <div className="sp__tiles">
-            {Array.from({ length: 6 }, (_, i) => <Tile key={i} p={list[i + 1]} i={i} />)}
+        <section className="sp__copy">
+          <p className="sp__lead">{INTRO_TEXT}</p>
+          <div className="sp__cta">
+            {onEnter && <button className="pill pill--ink-solid pill--lg" onClick={onEnter} autoFocus>Enter AirFx <span aria-hidden>→</span></button>}
+            {cloudEnabled && <button className="pill pill--ink pill--lg" onClick={() => onAuth('signup')}>Create Account</button>}
+            {cloudEnabled && <button className="pill pill--ink pill--lg" onClick={() => onAuth('login')}>Log In</button>}
           </div>
         </section>
       </main>
 
       <footer className="sp__foot">
+        <div className="sp__tiles" aria-label="Effect previews">
+          {Array.from({ length: 6 }, (_, i) => <Tile key={i} p={list[i]} i={i} />)}
+        </div>
+        <div className="sp__base">
+          <p className="sp__fine mono">{onEnter ? 'No account needed to start · ' : ''}Runs in your browser · Your files stay on your device · Created by {CREATOR.name}, {CREATOR.from}</p>
+        </div>
         <Ticker />
-        <p className="sp__credit mono">Created by {CREATOR.name}, {CREATOR.from}</p>
       </footer>
     </div>
   );
@@ -184,7 +199,7 @@ export function AuthScreen({ initial = 'login', onBack, backLabel = 'Back', onGu
         <aside className="auth__art" aria-hidden>
           <div className="auth__mosaic">
             <LiveFx className="tile" offset={2} every={3600} caption={(s) => <figcaption className="mono"><span>{TYPE_NAME[s.item.type]}</span>{s.effectName}</figcaption>} />
-            {Array.from({ length: 3 }, (_, i) => <Tile key={i} p={list[i + 5] ?? list[i]} i={i + 5} />)}
+            {Array.from({ length: 3 }, (_, i) => <Tile key={i} p={list[i + 4]} i={i + 4} />)}
           </div>
           <p className="auth__quote">Glitch it, melt it, print it, <em>make it move.</em></p>
         </aside>

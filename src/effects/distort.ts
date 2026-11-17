@@ -9,7 +9,7 @@ export const distort: EffectDefinition = {
   id: 'distort',
   name: 'Distort',
   category: 'distortion',
-  description: 'Waves, ripples, swirls, bulges and grid warps.',
+  description: 'Waves, zigzags, ripples, swirls, bulges and grid warps.',
   animated: (p) => (p.speed as number) > 0,
   audioDefaults: { amount: { band: 'bass', amount: 0.35 } },
   params: [
@@ -17,6 +17,7 @@ export const distort: EffectDefinition = {
       key: 'mode', label: 'Mode', type: 'select', group: 'Warp', default: 'wave',
       options: [
         { value: 'wave', label: 'Wave' },
+        { value: 'zigzag', label: 'ZigZag' },
         { value: 'ripple', label: 'Ripple' },
         { value: 'swirl', label: 'Swirl' },
         { value: 'bulge', label: 'Bulge / Pinch' },
@@ -26,7 +27,7 @@ export const distort: EffectDefinition = {
     },
     { key: 'amount', label: 'Amount', type: 'range', group: 'Warp', min: -1, max: 1, step: 0.005, default: 0.35 },
     { key: 'frequency', label: 'Frequency', type: 'range', group: 'Warp', min: 0.5, max: 40, step: 0.1, default: 6 },
-    { key: 'angle', label: 'Direction', type: 'range', group: 'Warp', min: 0, max: 179, step: 0.5, default: 0, unit: '°', visibleWhen: (v) => v.mode === 'wave' || v.mode === 'shear' },
+    { key: 'angle', label: 'Direction', type: 'range', group: 'Warp', min: 0, max: 179, step: 0.5, default: 0, unit: '°', visibleWhen: (v) => v.mode === 'wave' || v.mode === 'zigzag' || v.mode === 'shear' },
     { key: 'phase', label: 'Phase', type: 'range', group: 'Warp', min: 0, max: 1, step: 0.005, default: 0 },
     { key: 'speed', label: 'Animation Speed', type: 'range', group: 'Warp', min: 0, max: 3, step: 0.01, default: 0 },
     { key: 'cx', label: 'Center X', type: 'range', group: 'Center', min: 0, max: 1, step: 0.005, default: 0.5, visibleWhen: (v) => ['ripple', 'swirl', 'bulge'].includes(v.mode as string) },
@@ -64,6 +65,14 @@ export const distort: EffectDefinition = {
             const off = Math.sin(u * k + phase) * maxDisp;
             sx = x - sa * off;
             sy = y + ca * off;
+            break;
+          }
+          case 'zigzag': {
+            // A triangle wave: straight runs and sharp turns instead of curves.
+            const u = (x * ca + y * sa) * k + phase;
+            const tri = (2 / Math.PI) * Math.asin(Math.sin(u));
+            sx = x - sa * tri * maxDisp;
+            sy = y + ca * tri * maxDisp;
             break;
           }
           case 'ripple': {

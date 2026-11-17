@@ -1,14 +1,24 @@
 {
-  "about": "Media for the intro, log-in and About previews, shown in this order with a different AirFx effect each time. type: photo | video | gif. focus (photos only): the point to keep in frame, from 0 to 1 across and down.",
+  "about": "Media for the intro, log-in and About previews. media: the live showcase, in this order, each running its own AirFx effect live. stills: the still tiles, each photo with its own effect. No picture appears with two effects and no effect appears twice. type: photo | video | gif. effect: an AirFx effect id. focus (photos only): the point to keep in frame, from 0 to 1 across and down; zoom crops in closer.",
   "media": [
-    { "type": "video", "src": "video-1.mp4" },
-    { "type": "photo", "src": "photo-1.jpg", "focus": [0.48, 0.6], "zoom": 1.35 },
-    { "type": "gif", "src": "gif-1.gif" },
-    { "type": "video", "src": "video-2.mp4" },
-    { "type": "photo", "src": "photo-2.jpg", "focus": [0.42, 0.62] },
-    { "type": "gif", "src": "gif-2.gif" },
-    { "type": "video", "src": "video-3.mp4" },
-    { "type": "photo", "src": "photo-3.jpg", "focus": [0.72, 0.55] },
-    { "type": "gif", "src": "gif-3.gif" }
+    { "type": "video", "src": "video-1.mp4", "effect": "glitch2" },
+    { "type": "photo", "src": "photo-1.jpg", "focus": [0.48, 0.6], "zoom": 1.35, "effect": "nightVision" },
+    { "type": "gif", "src": "gif-1.gif", "effect": "halftone" },
+    { "type": "video", "src": "video-4.mp4", "effect": "radialBlur" },
+    { "type": "photo", "src": "photo-2.jpg", "focus": [0.42, 0.62], "effect": "moire" },
+    { "type": "gif", "src": "gif-2.gif", "effect": "ledScreen" },
+    { "type": "video", "src": "video-2.mp4", "effect": "ascii" },
+    { "type": "photo", "src": "photo-3.jpg", "focus": [0.72, 0.55], "effect": "oilPaint" },
+    { "type": "gif", "src": "gif-3.gif", "effect": "dreamy" },
+    { "type": "video", "src": "video-3.mp4", "effect": "thermal" }
+  ],
+  "stills": [
+    { "src": "photo-6.jpg", "effect": "pixelCrusher", "focus": [0.42, 0.6] },
+    { "src": "photo-8.jpg", "effect": "hexMosaic", "focus": [0.24, 0.45] },
+    { "src": "photo-5.jpg", "effect": "polarWarp", "focus": [0.5, 0.5] },
+    { "src": "photo-7.jpg", "effect": "pixelSort", "focus": [0.4, 0.45] },
+    { "src": "photo-4.jpg", "effect": "shapeHalftone", "focus": [0.3, 0.45] },
+    { "src": "photo-9.jpg", "effect": "pixelArt", "focus": [0.5, 0.55] },
+    { "src": "photo-10.jpg", "effect": "liquify", "focus": [0.5, 0.5] }
   ]
 }

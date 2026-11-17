@@ -6,36 +6,51 @@ import { createCanvas, get2d } from '../utils/imageProcessing';
 /**
  * Media for the intro, the log-in screen and the About page.
  *
- * public/showcase/showcase.json lists the photos, videos and GIFs. The live
- * showcase (LiveFx) plays them all; the still tiles below are made by running
- * the real AirFx renderers on the photos, one effect at a time, in the
- * background. Without the list, the bundled CC0 sample photo is used.
+ * public/showcase/showcase.json lists two sets:
+ *   media   photos, videos and GIFs for the live showcase (LiveFx), each with
+ *           its own effect running on it live;
+ *   stills  photos for the still tiles, each with its own effect, rendered by
+ *           the real AirFx renderers in the background.
+ * No picture is shown with two effects, and no effect is shown twice.
+ * Without the list, the bundled CC0 sample photo is used.
  */
 
-export interface ShowcaseItem { type: 'photo' | 'video' | 'gif'; src: string; focus?: [number, number]; zoom?: number }
+export interface ShowcaseItem { type: 'photo' | 'video' | 'gif'; src: string; focus?: [number, number]; zoom?: number; effect?: string }
+/** A still tile: one photo with one effect. */
+export interface StillItem { src: string; effect: string; focus?: [number, number]; zoom?: number; params?: ParamValues; frames?: number }
 export interface Preview { id: string; name: string; url: string; media: ShowcaseItem['type'] }
 
 const BASE = '/showcase/';
 const SAMPLE: ShowcaseItem = { type: 'photo', src: '/samples/portrait.jpg', focus: [0.5, 0.35] };
+/** Used only when showcase.json is missing: the sample photo with a few effects. */
+const FALLBACK_STILLS: StillItem[] = ['pixelCrusher', 'moire', 'halftone', 'ascii'].map((effect) => ({ src: SAMPLE.src, effect, focus: SAMPLE.focus }));
 
 /* ── The media list ── */
 
 let media: ShowcaseItem[] = [];
+let stills: StillItem[] = [];
 let mediaStarted = false;
 const mediaListeners = new Set<() => void>();
 let mediaReady: Promise<ShowcaseItem[]> | null = null;
+const at = (src: string) => (/^(\/|https?:)/.test(src) ? src : BASE + src);
 
 function loadMedia() {
   if (mediaReady) return mediaReady;
   mediaStarted = true;
   mediaReady = fetch(`${BASE}showcase.json`)
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-    .then((j: { media?: ShowcaseItem[] }) => (j.media ?? [])
-      .filter((m) => m && (m.type === 'photo' || m.type === 'video' || m.type === 'gif') && typeof m.src === 'string')
-      .map((m) => ({ ...m, src: /^(\/|https?:)/.test(m.src) ? m.src : BASE + m.src })))
+    .then((j: { media?: ShowcaseItem[]; stills?: StillItem[] }) => {
+      stills = (j.stills ?? [])
+        .filter((s) => s && typeof s.src === 'string' && typeof s.effect === 'string')
+        .map((s) => ({ ...s, src: at(s.src) }));
+      return (j.media ?? [])
+        .filter((m) => m && (m.type === 'photo' || m.type === 'video' || m.type === 'gif') && typeof m.src === 'string')
+        .map((m) => ({ ...m, src: at(m.src) }));
+    })
     .catch(() => [] as ShowcaseItem[])
     .then((list) => {
       media = list.length ? list : [SAMPLE];
+      if (!stills.length) stills = FALLBACK_STILLS;
       mediaListeners.forEach((f) => f());
       return media;
     });
@@ -50,22 +65,6 @@ export const showcase = {
 
 /* ── Still tiles ── */
 
-/** Effects shown on the photos, in order, with settings that read well at a small size. */
-const STILLS: { id: string; params?: ParamValues; frames?: number }[] = [
-  { id: 'glitch2' },
-  { id: 'moire' },
-  { id: 'pixelArt' },
-  { id: 'inkBleed', frames: 16 },
-  { id: 'dreamy' },
-  { id: 'scatter' },
-  { id: 'liquify' },
-  { id: 'thermal' },
-  { id: 'halftone' },
-  { id: 'crayon' },
-  { id: 'ascii' },
-  { id: 'nightVision' },
-];
-
 const W = 360, H = 450;
 const done: Preview[] = [];
 const listeners = new Set<() => void>();
@@ -73,11 +72,19 @@ let started = false;
 let snapshot: Preview[] = [];
 function emit() { snapshot = [...done]; listeners.forEach((f) => f()); }
 
-async function frame(item: ShowcaseItem): Promise<HTMLCanvasElement | null> {
-  const img = new Image();
-  img.decoding = 'async';
-  img.src = item.src;
-  try { await img.decode(); } catch { return null; }
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement | null>((resolve) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+async function frame(item: { src: string; focus?: [number, number]; zoom?: number }): Promise<HTMLCanvasElement | null> {
+  const img = await loadImage(item.src);
+  if (!img || !img.naturalWidth) return null;
   // Cover-crop to 4:5 around the focus point.
   const c = createCanvas(W, H), g = get2d(c, true);
   const [fx, fy] = item.focus ?? [0.5, 0.5];
@@ -90,16 +97,14 @@ async function frame(item: ShowcaseItem): Promise<HTMLCanvasElement | null> {
 async function run() {
   if (started) return;
   started = true;
-  const photos = (await loadMedia()).filter((m) => m.type === 'photo');
-  const sources = (await Promise.all((photos.length ? photos : [SAMPLE]).map(frame))).filter((c): c is HTMLCanvasElement => !!c);
-  if (!sources.length) { const s = await frame(SAMPLE); if (s) sources.push(s); else return; }
+  await loadMedia();
   const renderer = new FrameRenderer();
-  for (let n = 0; n < STILLS.length; n++) {
-    const s = STILLS[n], e = getEffect(s.id);
+  for (const s of stills) {
+    const e = getEffect(s.effect);
     if (!e) continue;
     try {
-      // Each effect on the next photo, so every photo appears.
-      const src = sources[n % sources.length];
+      const src = await frame(s);
+      if (!src) continue;
       const target = createCanvas(W, H);
       const layers = [{ effect: e, params: { ...defaultParams(e), ...s.params } }];
       const count = s.frames ?? (e.compat === 'video' ? 12 : 1);

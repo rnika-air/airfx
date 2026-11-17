@@ -22,3 +22,6 @@ export const CREATOR = {
 };
 
 export const COPYRIGHT_YEAR = 2026;
+
+/** What AirFx is, in the creator's words: the splash and the About page. */
+export const INTRO_TEXT = 'A creative playground for experimental visuals, image manipulation, motion graphics and digital art. Explore new techniques, distort reality and create your own visual language.';

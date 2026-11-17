@@ -60,39 +60,6 @@
   position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column;
   background: var(--bg); color: var(--text); overflow: hidden;
 }
-.sp::before {
-  /* A faint registration grid, like a print sheet. */
-  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
-  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 25% 100%, 100% 33.33%;
-  mask-image: linear-gradient(180deg, transparent, #000 20%, #000 80%, transparent);
-}
-.sp__wipe {
-  position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink);
-  transform: translateY(-101%); pointer-events: none;
-}
-.sp__wipe span { font-size: clamp(11px, 1.6vw, 15px); font-weight: 700; }
-.sp--intro .sp__wipe { animation: wipe 1.25s cubic-bezier(0.7, 0, 0.2, 1) both; }
-@keyframes wipe { 0% { transform: translateY(101%); } 38%, 55% { transform: translateY(0); } 100% { transform: translateY(-101%); } }
-.sp__main {
-  position: relative; z-index: 1; flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(16px, 4vw, 64px);
-  padding: clamp(16px, 3vw, 40px) calc(clamp(16px, 3vw, 40px) + var(--safe-r)) 12px calc(clamp(16px, 3vw, 40px) + var(--safe-l));
-  overflow: auto;
-}
-.sp__copy { display: flex; flex-direction: column; justify-content: center; gap: 18px; min-width: 0; }
-.sp__kicker { color: var(--text-3); margin: 0; }
-.sp__word { margin: 0; line-height: 0; }
-.sp__word .wordmark { width: min(100%, 620px); height: auto; aspect-ratio: 340 / 122; }
-.sp__claim { margin: 0; font-size: clamp(26px, 3.6vw, 52px); font-weight: 700; line-height: 1; letter-spacing: -0.035em; }
-.sp__claim em, .auth__title em, .auth__quote em, .ab__statement em { font-family: var(--serif); font-weight: 400; font-style: italic; color: var(--accent); letter-spacing: -0.01em; }
-.sp__lead { margin: 0; max-width: 44ch; font-size: clamp(14px, 1.2vw, 17px); line-height: 1.5; color: var(--text-2); }
-.sp__cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
-.sp__fine { margin: 0; color: var(--text-3); font-size: 9.5px; }
-.sp__stage { position: relative; display: grid; grid-template-columns: 1.25fr 1fr; gap: 12px; align-content: center; min-width: 0; }
-.sp__tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: center; }
-.sp__tiles .tile:nth-child(odd) { transform: translateY(14px) rotate(-1.2deg); }
-.sp__tiles .tile:nth-child(even) { transform: rotate(1deg); }
-.sp__tiles .tile:nth-child(n + 5) { display: none; }
 .hero { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: var(--bg-2); border: 1px solid var(--accent); }
 .hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .hero__fx { animation: reveal 1.1s cubic-bezier(0.7, 0, 0.2, 1) both; }
@@ -102,25 +69,126 @@
 .hero__cap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: end; gap: 8px; padding: 10px 12px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.8)); }
 .hero__cap strong { font: 700 clamp(16px, 1.8vw, 24px) var(--font); letter-spacing: -0.02em; text-transform: none; }
 .hero__tag { position: absolute; top: 10px; left: 10px; padding: 3px 8px; background: var(--bg); border: 1px solid var(--line-2); border-radius: 999px; font-size: 9px; }
-.sp__foot { position: relative; z-index: 1; border-top: 1px solid var(--line); padding-bottom: var(--safe-b); }
-.sp__credit { margin: 0; padding: 8px 24px 10px; color: var(--text-3); font-size: 9.5px; text-align: center; }
-.ticker { overflow: hidden; border-bottom: 1px solid var(--line); padding: 10px 0; }
+
+/* The splash: a full lime page in black ink, like an independent studio's
+   site. A giant wordmark with a hand-drawn swash, the live effect preview
+   laid over it like a cut-out object, hairline pills, and a dark base bar. */
+.sp { background: var(--accent); color: var(--accent-ink); }
+.sp__dots { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+.sp__bar, .sp__main, .sp__foot { position: relative; z-index: 1; }
+.sp__bar {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
+  padding: calc(16px + var(--safe-t)) calc(clamp(16px, 2.6vw, 36px) + var(--safe-r)) 10px calc(clamp(16px, 2.6vw, 36px) + var(--safe-l));
+}
+.sp__mark { font-weight: 700; font-size: 11px; }
+.sp__badge { justify-self: center; padding: 5px 12px; border: 1px solid var(--accent-ink); border-radius: 999px; font-size: 9.5px; white-space: nowrap; }
+.sp__badge em { font-style: normal; opacity: 0.55; }
+.sp__nav { justify-self: end; display: flex; gap: 6px; }
+.pill--ink { background: transparent; border-color: var(--accent-ink); color: var(--accent-ink); }
+.pill--ink:hover:not(:disabled) { background: var(--accent-ink); color: var(--accent); }
+.pill--ink-solid { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--accent); font-weight: 700; }
+.pill--ink-solid:hover:not(:disabled) { background: #000; color: #fff; }
+.sp .pill:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+.sp__main {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 20px;
+  padding: clamp(8px, 2vh, 28px) calc(clamp(16px, 2.6vw, 36px) + var(--safe-r)) clamp(14px, 2.4vh, 28px) calc(clamp(16px, 2.6vw, 36px) + var(--safe-l));
+}
+.sp__type { min-width: 0; }
+.sp__word { position: relative; display: inline-block; margin: 0; line-height: 0; }
+.sp .sp__word .wordmark { width: min(62vw, 88vh, 1000px); height: auto; aspect-ratio: 340 / 122; display: block; }
+.sp .wordmark__pixel { fill: var(--accent-ink); }
+.sp__swash { position: absolute; left: 50%; top: 74%; width: 62%; height: 46%; overflow: visible; pointer-events: none; }
+.sp__swash path { fill: none; stroke: var(--accent-ink); stroke-width: clamp(4px, 0.62vw, 9px); stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.sp__kicker { margin: 10px 0 0 4px; font-size: 9.5px; max-width: 30ch; }
+.sp__object {
+  position: absolute; z-index: 2; right: calc(clamp(16px, 7vw, 120px) + var(--safe-r)); top: 2%;
+  height: min(82%, 600px); aspect-ratio: 4 / 5; rotate: 3.5deg;
+  animation: float 7s ease-in-out infinite;
+}
+.sp__object .hero { height: 100%; border: 0; box-shadow: 0 34px 70px -18px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.6); }
+.sp__sticker {
+  position: absolute; z-index: 3; left: -38px; top: 18%; width: 76px; height: 76px; display: grid; place-items: center; text-align: center;
+  border-radius: 50%; background: var(--accent-ink); color: var(--accent); font-size: 9px; font-weight: 700; line-height: 1.3;
+  rotate: -14deg; animation: spin 14s linear infinite;
+}
+@keyframes float { 50% { translate: 0 -10px; rotate: 2deg; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sp__copy { max-width: min(560px, 46vw); display: flex; flex-direction: column; gap: 18px; }
+.sp__lead { margin: 0; font-size: clamp(17px, 1.55vw, 23px); line-height: 1.32; font-weight: 500; letter-spacing: -0.015em; }
+.sp__cta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.sp__foot { background: var(--bg); color: var(--text); padding-bottom: var(--safe-b); }
+.sp__tiles { display: flex; gap: 8px; padding: 12px calc(clamp(16px, 2.6vw, 36px) + var(--safe-r)) 0 calc(clamp(16px, 2.6vw, 36px) + var(--safe-l)); overflow-x: auto; scrollbar-width: none; }
+.sp__tiles::-webkit-scrollbar { display: none; }
+.sp__tiles .tile { flex: 0 0 auto; height: clamp(84px, 13vh, 132px); border-color: var(--line); }
+.sp__tiles .tile figcaption { font-size: 8.5px; padding: 4px 6px; }
+.sp__base { display: flex; justify-content: space-between; gap: 16px; padding: 10px calc(clamp(16px, 2.6vw, 36px) + var(--safe-r)) 10px calc(clamp(16px, 2.6vw, 36px) + var(--safe-l)); }
+.sp__fine { margin: 0; color: var(--text-3); font-size: 9px; }
+.ticker { overflow: hidden; border-top: 1px solid var(--line); padding: 9px 0; }
 .ticker__track { display: flex; width: max-content; animation: tick 90s linear infinite; }
 .ticker__track span { font: 600 13px var(--font); letter-spacing: -0.01em; color: var(--text-2); white-space: nowrap; }
 .ticker__track i { font-style: normal; color: var(--accent); margin: 0 14px; }
 @keyframes tick { to { transform: translateX(-50%); } }
-/* The opening: everything rises in behind the wipe. */
-.sp--intro .sp__copy > *, .sp--intro .hero, .sp--intro .sp__tiles .tile { animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.sp--intro .sp__copy > :nth-child(1) { animation-delay: 0.62s; }
-.sp--intro .sp__copy > :nth-child(2) { animation-delay: 0.68s; }
-.sp--intro .sp__copy > :nth-child(3) { animation-delay: 0.78s; }
-.sp--intro .sp__copy > :nth-child(4) { animation-delay: 0.86s; }
-.sp--intro .sp__copy > :nth-child(n + 5) { animation-delay: 0.94s; }
-.sp--intro .hero { animation-delay: 0.7s; }
-.sp--intro .sp__tiles .tile { animation-name: drop; animation-delay: calc(0.8s + var(--i) * 0.06s); }
-@keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
-@keyframes drop { from { opacity: 0; translate: 0 -30px; } to { opacity: 1; translate: 0 0; } }
 
+/* The opening: the dots fill the page, then the type and the object arrive. */
+.sp--intro .sp__bar, .sp--intro .sp__main, .sp--intro .sp__foot { visibility: hidden; }
+.sp--ready .sp__word .wordmark { animation: lift 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.sp--ready .sp__swash path { animation: draw 1.3s 0.35s cubic-bezier(0.6, 0, 0.3, 1) both; }
+.sp--ready .sp__kicker, .sp--ready .sp__copy > * { animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.sp--ready .sp__kicker { animation-delay: 0.3s; }
+.sp--ready .sp__copy > :nth-child(1) { animation-delay: 0.4s; }
+.sp--ready .sp__copy > :nth-child(2) { animation-delay: 0.5s; }
+.sp--ready .sp__object .hero { animation: drop 0.9s 0.25s cubic-bezier(0.2, 0.9, 0.25, 1.15) both; }
+.sp--ready .sp__bar { animation: rise 0.6s both; }
+.sp--ready .sp__foot { animation: up 0.7s 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.sp--ready .sp__tiles .tile { animation: rise 0.6s calc(0.6s + var(--i) * 0.06s) both; }
+@keyframes lift { from { clip-path: inset(100% 0 0 0); translate: 0 30%; } to { clip-path: inset(-10% 0 -10% 0); translate: 0 0; } }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes drop { from { opacity: 0; translate: 0 -60px; rotate: -8deg; } to { opacity: 1; translate: 0 0; rotate: 0deg; } }
+@keyframes up { from { translate: 0 100%; } to { translate: 0 0; } }
+
+/* Tablets: the object moves beside the text instead of over a smaller wordmark. */
+@media (max-width: 1100px) and (min-width: 761px) {
+  .sp .sp__word .wordmark { width: min(78vw, 80vh); }
+  .sp__object { height: min(56%, 440px); top: auto; bottom: 4%; }
+  .sp__copy { max-width: 52vw; }
+}
+/* Phones: one column that scrolls; the object overlaps the wordmark's foot. */
+@media (max-width: 760px) {
+  .sp__bar { grid-template-columns: auto 1fr; padding: calc(10px + var(--safe-t)) calc(14px + var(--safe-r)) 8px calc(14px + var(--safe-l)); }
+  .sp__badge { display: none; }
+  .sp__hide-sm { display: none; }
+  .sp { overflow-y: auto; }
+  .sp__dots { position: fixed; }
+  .sp__main { flex: none; justify-content: flex-start; gap: 18px; padding: 8px calc(16px + var(--safe-r)) 22px calc(16px + var(--safe-l)); }
+  .sp__word { display: block; }
+  .sp .sp__word .wordmark { width: 100%; }
+  .sp__swash { left: 34%; width: 66%; top: 76%; height: 40%; }
+  .sp__object { position: relative; right: auto; top: auto; height: auto; width: min(68%, 300px); margin: -2px 0 0 auto; rotate: 3deg; }
+  .sp__sticker { width: 62px; height: 62px; left: -30px; font-size: 8px; }
+  .sp__copy { max-width: none; gap: 14px; }
+  .sp__lead { font-size: 17px; }
+  .sp__cta { flex-direction: column; }
+  .sp__cta .pill { width: 100%; }
+  .sp__tiles { padding-top: 10px; }
+  .sp__tiles .tile { height: 96px; }
+  .sp__base { padding: 8px 16px; }
+  .ticker { padding: 7px 0; }
+  .ticker__track span { font-size: 12px; }
+}
+/* Short landscape phones: everything scrolls in one column too. */
+@media (max-height: 540px) and (orientation: landscape) {
+  .sp__main { overflow-y: auto; justify-content: flex-start; }
+  .sp .sp__word .wordmark { width: min(58vw, 120vh); }
+  .sp__object { height: 78%; top: 4%; }
+  .sp__tiles { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sp__object, .sp__sticker, .ticker__track { animation: none; }
+  .sp--ready .sp__word .wordmark, .sp--ready .sp__swash path, .sp--ready .sp__kicker, .sp--ready .sp__copy > *, .sp--ready .sp__object .hero, .sp--ready .sp__bar, .sp--ready .sp__foot, .sp--ready .sp__tiles .tile { animation: none; }
+}
 /* ── Log in / Sign up ───────────────────────────────────────── */
 .auth__main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 480px); overflow: auto; }
 .auth__art { display: flex; flex-direction: column; justify-content: center; gap: 28px; padding: 40px; border-right: 1px solid var(--line); min-width: 0; }
@@ -205,7 +273,6 @@
 @media (max-width: 1100px) {
   .ab__sec { grid-template-columns: 40px 150px minmax(0, 1fr); }
   .ab__aside { grid-column: 3; }
-  .sp__stage { grid-template-columns: 1fr 1fr; }
   .auth__main { grid-template-columns: minmax(0, 1fr) minmax(340px, 440px); }
   .auth__mosaic { grid-template-columns: repeat(2, 1fr); max-width: 420px; }
 }
@@ -215,23 +282,6 @@
   .brandbar { grid-template-columns: auto 1fr auto; padding: calc(10px + var(--safe-t)) calc(14px + var(--safe-r)) 10px calc(14px + var(--safe-l)); }
   .brandbar__mid { display: none; }
   .brandbar__nav { grid-column: 3; }
-  .sp__hide-sm { display: none; }
-  .sp__main { grid-template-columns: minmax(0, 1fr); align-content: start; gap: 22px; padding: 18px calc(16px + var(--safe-r)) 16px calc(16px + var(--safe-l)); }
-  .sp__copy { justify-content: flex-start; gap: 14px; }
-  .sp__word .wordmark { width: 100%; }
-  .sp__claim { font-size: clamp(30px, 9vw, 40px); }
-  .sp__lead { font-size: 15px; }
-  .sp__cta { flex-direction: column; }
-  .sp__cta .pill { width: 100%; }
-  .sp__stage { order: -1; display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 calc(-16px - var(--safe-r)) 0 calc(-16px - var(--safe-l)); padding: 0 16px 4px; scrollbar-width: none; }
-  .sp__stage::-webkit-scrollbar { display: none; }
-  .hero { flex: 0 0 64%; scroll-snap-align: start; }
-  .sp__tiles { display: contents; }
-  .sp__tiles .tile { flex: 0 0 40%; scroll-snap-align: start; transform: none !important; }
-  .sp__tiles .tile:nth-child(n + 5) { display: block; }
-  .sp__credit { padding: 6px 16px 8px; }
-  .ticker { padding: 8px 0; }
-  .ticker__track span { font-size: 12px; }
 
   .auth__main { grid-template-columns: minmax(0, 1fr); align-content: start; }
   .auth__art { order: -1; padding: 16px calc(16px + var(--safe-r)) 0 calc(16px + var(--safe-l)); border: 0; gap: 0; }
@@ -257,9 +307,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sp--intro .sp__wipe { animation: none; }
-  .sp__copy > *, .hero, .tile, .tile img, .hero__fx, .hero__edge { animation: none !important; }
-  .ticker__track { animation: none; }
   .ab__scroll { scroll-behavior: auto; }
 }
 
@@ -447,7 +494,7 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .livefx figcaption, .livefx .hero__cap, .livefx .hero__tag { z-index: 1; }
 .ab__strip .ab__live { aspect-ratio: 4 / 5; scroll-snap-align: start; }
 @media (prefers-reduced-motion: reduce) { .livefx__fx, .livefx__edge { animation: none; } }
-/* Which kind of media is on screen: Photo � Video � GIF */
+/* Which kind of media is on screen: Photo � Video � GIF */
 .hero__types { position: absolute; z-index: 1; top: 10px; right: 10px; display: flex; gap: 2px; padding: 2px; background: var(--bg); border: 1px solid var(--line-2); border-radius: 999px; font-size: 9px; }
 .hero__types span { padding: 3px 8px; border-radius: 999px; color: var(--text-3); transition: background 0.3s, color 0.3s; }
 .hero__types span.on { background: var(--accent); color: var(--accent-ink); }

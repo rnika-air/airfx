@@ -1,6 +1,6 @@
 # AirFx Effect Audit
 
-Generated from `src/effects/registry.ts` by `scripts/audit-effects.mjs`. 133 effects.
+Generated from `src/effects/registry.ts` by `scripts/audit-effects.mjs`. 140 effects.
 
 Every effect below was rendered through the real stack renderer with default settings, without errors. All can be added, reordered, disabled, duplicated and removed in the stack. Each effect was also rendered at 1920×1080 and 960×540 and compared, and rendered twice to confirm the same frame gives the same result. The controls of the effects added in 3.0 and 4.0 were each changed one at a time and confirmed to change the picture.
 
@@ -18,7 +18,7 @@ Since 5.2 the test bench in `qa/` (development only: `npm run dev`, then open `/
 | **Array Riso** | Image, video | 5 | Cell Size, Target Color, Tolerance, Tile Color, Motion |  |
 | **Array Airbrush** | Image, video | 4 | Cell Size, Coverage, Shape Color, Motion |  |
 
-## Pattern & Generative (18)
+## Pattern & Generative (20)
 
 | Effect | Media | Controls | Parameters | Known limitation |
 | --- | --- | --- | --- | --- |
@@ -40,15 +40,17 @@ Since 5.2 the test bench in `qa/` (development only: `npm run dev`, then open `/
 | **Contour Field** | Image, video | 15 | Levels, Smoothness, Noise Mix, Noise Size, Flow, Seed, Line Width, Stroke Style, Dash Length, Color System, Line / Low, High, Background, Transparent Background, Auto Tone |  |
 | **Data Bars** | Image, video | 11 | Columns, Bar Height, Gap, Measure, Grow From, Value Labels, Grid, Color, Bar Color, Dim Image, Label Font |  |
 | **Reaction Diffusion** | Image, video | 20 | Pattern, Feed Rate, Kill Rate, Pattern Scale, Follow Picture, Grow In Light Areas, Direction, Direction Strength, Angle, Seed Density, Start Grown, Growth Speed, Seed, Look, Ground, Pattern, Edge Sharpness, Thickness, Relief Light, Mix | After a long jump forward in a video, the preview catches up over a few frames; an export grows frame by frame from the start. |
+| **Hex Mosaic** | Image, video | 12 | Cell Style, Cell Size, Orientation, Lens Zoom, Bulge, Gloss, Bevel Depth, Light Angle, Rim Width, Rim Color, Rim Shadow, Uneven Cells |  |
+| **Voxel Cubes** | Image, video | 11 | Cube Size, Height, Rise With, Height Steps, Color Levels, Top Light, Side Shade, Edge Lines, Edge Color, Background, Light From Right |  |
 
-## Distortion & Glitch (19)
+## Distortion & Glitch (22)
 
 | Effect | Media | Controls | Parameters | Known limitation |
 | --- | --- | --- | --- | --- |
 | **Scatter** | Image, video | 46 | Point Density, Scatter Amount, Random Seed, Minimum Size, Maximum Size, Shape, Size by Brightness, Color Mode, Shape Color, Background Color, Transparent Background, Distribution, Content, Text, Elements, Case, Icon, Files, Points, Inner Radius, SVG Path (0 to 100), Element Order, Font, Weight, Letter Spacing, Line Spacing, Alignment, Wrap After Letters, Color, Fill, Fill Shape, Outline, Outline Color, Treatment, Brightness, Contrast, Scale, Width, Height, Rotation, Random Rotation, Opacity, Offset X, Offset Y, Blend, Auto Tone |  |
 | **Distort** | Image, video | 10 | Mode, Amount, Frequency, Direction, Phase, Animation Speed, Center X, Center Y, Radius, Edges |  |
 | **Displace** | Image, video | 10 | Map Source, Strength, Direction, Map Smoothing, Noise Scale, Octaves, Seed, Animation Speed, Channel Split, Edges |  |
-| **PixDisplace** | Image, video | 8 | Block Size, Coverage, Mixed Sizes, Displacement, Direction, Smear, Steps / sec, Seed |  |
+| **PixDisplace** | Image, video | 13 | Block Size, Coverage, Mixed Sizes, Displacement, Direction, Smear, Steps / sec, Seed, Color Fringe, Dark Holes, Area, Center X, Center Y |  |
 | **Datamosh** | Image, video | 9 | Block Size, Smear, Drift Angle, Drift Strength, Turbulence, Fresh Bleed, Mosh Moving Areas Only, Keyframe Every, Seed | Keeps earlier frames: it develops during playback. |
 | **Pixel Sort** | Image, video | 7 | Direction, Sort By, Lower Threshold, Upper Threshold, Max Span, Reverse Order, Show Mask |  |
 | **RGB Shift** | Image, video | 3 | Distance, Angle, Shift Green |  |
@@ -64,8 +66,11 @@ Since 5.2 the test bench in `qa/` (development only: `npm run dev`, then open `/
 | **Ink Bleed** | Image, video | 63 | Ink Follows, Motion Sensitivity, Motion Threshold, Follow Motion, On A Still Image, Ink Amount, Ink Strength, Color Layers, Ink 1, Ink 2, Ink 3, Layer Separation, Ink Shape, Shape Size, Bleed Spread, Bleed Radius, Edge Hardness, Edge Texture, Wet Edge, Fade Time, Direction, Flow Speed, Turbulence, Swirl Detail, Fluid Distortion, Ink Blend, Ink Opacity, Background, Paper, Seed, Content, Text, Elements, Case, Icon, Files, Points, Inner Radius, SVG Path (0 to 100), Element Order, Font, Weight, Letter Spacing, Line Spacing, Alignment, Wrap After Letters, Color, Fill, Fill Shape, Outline, Outline Color, Treatment, Brightness, Contrast, Scale, Width, Height, Rotation, Random Rotation, Opacity, Offset X, Offset Y, Blend |  |
 | **Glitch 2.0** | Image, video | 28 | Glitch Intensity, Timing, Glitch Speed, Burst Frequency, Burst Length, Direction, Glitch Pattern, Glitch Frequency, Span Size, Seed, RGB Separation, Separation Angle, Color Channel Shift, Signal Burn, Digital Displacement, Horizontal Tearing, Vertical Tearing, Tear Detail, Pixel Sorting, Sort From Tone, Sort To Tone, Datamosh Melt, Mosh Block Size, Frame Distortion, Digital Noise, Noise Tint, Scanlines, Scanline Size |  |
 | **Modulation** | Image, video | 59 | Output, Modulation, Modulated By, Text, Font, Text Size, Invert Source, Modulation Depth, Source Smoothing, Waveform, Frequency, Amplitude, Phase, Speed, Direction, Repetition, Distortion, Distortion Drift, Line Width, Width Follows Source, Color, Line Color, Second Color, Background, Show Image Under Lines, Content, Text, Elements, Case, Icon, Files, Points, Inner Radius, SVG Path (0 to 100), Element Order, Font, Weight, Letter Spacing, Line Spacing, Alignment, Wrap After Letters, Color, Fill, Fill Shape, Outline, Outline Color, Treatment, Brightness, Contrast, Scale, Width, Height, Rotation, Random Rotation, Opacity, Offset X, Offset Y, Blend, Auto Tone |  |
+| **Radial Blur** | Image, video | 12 | Mode, Amount, Spin Angle, Quality, Streak Outward Only, Center X, Center Y, Sharp Center, Falloff, Light Streaks, Streak Level, Pulse Speed |  |
+| **Focus & Motion Blur** | Image, video | 9 | Mode, Blur, Angle, Quality, Focus Position, Sharp Band, Falloff, Saturation, Contrast |  |
+| **Polar Warp** | Image, video | 10 | Mode, Center X, Center Y, Size, Rotate, Repeat, Spiral Step, Twist, Hide Seam, Animation Speed | Infinite Spiral repeats the ring around the centre, so it suits pictures with something in the middle. |
 
-## Texture & Print (27)
+## Texture & Print (28)
 
 | Effect | Media | Controls | Parameters | Known limitation |
 | --- | --- | --- | --- | --- |
@@ -96,8 +101,9 @@ Since 5.2 the test bench in `qa/` (development only: `npm run dev`, then open `/
 | **Pixel Gradient** | Image, video | 9 | Pixel Size, Gradient Angle, Follow Image, Dither, Color 1, Color 2, Color 3, Color 4, Auto Tone |  |
 | **Image To Pixel Art** | Image, video | 65 | Resolution By, Pixel Size, Sprite Width, Pixel Density, Pixel Shape, Gap Color, Color Palette, Colors, Levels, Custom Palette, Lock Palette On Video, Contrast, Saturation, Brightness, Dithering, Dither Strength, Edge Preservation, Sprite Outline, Outline Threshold, Outline Color, Pixel Cutout, Cutout Shape, Cutout Pixel Size, Cutout Size, Position X, Position Y, Line Thickness, Spiral Turns, Filled Shape, Invert Shape, Pixelate Image Too, Paper, Content, Text, Elements, Case, Icon, Files, Points, Inner Radius, SVG Path (0 to 100), Element Order, Font, Weight, Letter Spacing, Line Spacing, Alignment, Wrap After Letters, Color, Fill, Fill Shape, Outline, Outline Color, Treatment, Brightness, Contrast, Scale, Width, Height, Rotation, Random Rotation, Opacity, Offset X, Offset Y, Blend |  |
 | **Crayon** | Image, video | 25 | Crayon Colors, Crayons In The Box, Color Blending, Saturation, Color Variation, Stroke Density, Stroke Length, Stroke Width, Stroke Direction, Direction, Direction Jitter, Pressure, Crayon Texture, Texture Scale, Edge Preservation, Outline Width, Outline Darkness, Broken Outline, Background, Paper Threshold, Paper Color, Paper Texture, Hand-Drawn Boil, Show Image Under Paper, Seed |  |
+| **Oil Paint** | Image, video | 9 | Brush Size, Edge Sharpness, Saturation, Brush Marks, Stroke Length, Impasto, Light Angle, Canvas Weave, Steady On Video | Paint is worked out on a copy at most 1600 px long; brush marks and canvas are drawn at full size. |
 
-## Light & Optical (15)
+## Light & Optical (16)
 
 | Effect | Media | Controls | Parameters | Known limitation |
 | --- | --- | --- | --- | --- |
@@ -116,6 +122,7 @@ Since 5.2 the test bench in `qa/` (development only: `npm run dev`, then open `/
 | **Digital Bubbles** | Image, video | 8 | Bubbles, Size, Size Variation, Refraction, Iridescent Rim, Highlight, Rise Speed, Seed |  |
 | **Dreamy** | Image, video | 39 | Look, Intensity, Paper, Deep Pigment, Mid Pigment, Thin Pigment, Subject Threshold, Bleed, Pigment Density, Pigment Grain, Keep Image Color, Light Subject, Bloom, Bloom Threshold, Bloom Size, Dreamy Blur, Blur Size, Light Leaks, Leak Count, Leak Size, Leak Drift, Leak Color A, Leak Color B, Haze, Haze Size, Haze Drift, Haze Color, Chromatic Distortion, Fringe Shape, Fringe Angle, Color Grade, Shadows, Midtones, Highlights, Saturation, Lifted Blacks, Film Grain, Grain Motion, Seed |  |
 | **LED Screen** | Image, video | 7 | Pixel Pitch, Sub-Pixels, Gap, Glow, Brightness, Black Level, Refresh Flicker |  |
+| **Snowfall** | Image, video | 11 | Amount, Flake Size, Flakes, Depth Of Field, Fall Speed, Wind, Sway, Snow Color, Opacity, Winter Haze, Seed |  |
 
 ## Color & Image Adjustments (21)
 

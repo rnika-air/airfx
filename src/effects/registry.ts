@@ -44,6 +44,7 @@ import { adjustMaster } from './adjust/master';
 import { V43 } from './v43';
 import { AUTO_TONE } from './tone';
 import { V52 } from './v52';
+import { V53 } from './v53';
 
 /** The five flagship effects of v0.1. */
 export const CORE_EFFECT_IDS = ['moire', 'scatter', 'halftone', 'glitch', 'filmGrain'];
@@ -67,6 +68,7 @@ export const EFFECTS: EffectDefinition[] = [
   ...EXPERIMENTAL,
   ...V43,
   ...V52,
+  ...V53,
   slide, stack, stutter,
   ...STACKS,
   adjustMaster,

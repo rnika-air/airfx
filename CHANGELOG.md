@@ -4,6 +4,24 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+### New opening screen
+- The intro is now a full lime page: halftone dots swell out of the dark and merge into it, then a giant AirFx wordmark arrives with a hand-drawn swash, the live effect preview lands over it like a cut-out, and a dark base bar carries the effect tiles and the scrolling effect list. The dots bulge around your pointer (or drift slowly on touch screens). Works on phones, tablets and desktop, and respects reduced motion.
+- New introduction: “A creative playground for experimental visuals, image manipulation, motion graphics and digital art. Explore new techniques, distort reality and create your own visual language.” On the intro and the About page. AirFx is no longer described as “AI-powered”.
+
+### Previews with their own pictures
+- Seven new photos and a new skate clip in the showcase. Every photo, clip and GIF now has its own effect, and no effect is shown twice. Pixel Crusher replaces Ink Bleed among the previews.
+
+### New effects
+- **Radial Blur**: zoom or spin blur around a point you place, with a sharp centre, light that streaks further than the rest, and an optional pulse.
+- **Focus & Motion Blur**: Gaussian, motion (any angle) and tilt-shift (turns a scene into a miniature), with edges that never darken.
+- **Polar Warp**: Little Planet, Tunnel, Unwrap and Infinite Spiral (a Droste spiral that can zoom endlessly), with twist, repeats and a hidden seam.
+- **Hex Mosaic**: a honeycomb of tiny lenses (a compound eye or bubble wrap), flat tiles or bevelled tiles, with rim colour, gloss and light angle.
+- **Voxel Cubes**: the picture rebuilt from isometric 3D cubes that rise with its brightness or darkness, in steps or smoothly.
+- **Oil Paint**: colours merge into strokes of paint that follow the forms (a generalized Kuwahara filter), with brush marks, impasto lit from one side and canvas weave. Steady on video.
+- **Snowfall**: snow in depth: far flakes small and slow, near flakes big and out of focus, with wind, sway, crystals and a winter haze.
+- **PixDisplace**: new Explode Outward direction (blocks fly out from a centre and leave dark holes), Color Fringe, Dark Holes and Area, plus presets (Shattered Face, Signal Tear, Data Rain).
+- **Distort**: new ZigZag mode. **Shape Halftone**: Square, Ring, Lines and Diagonal shapes.
+
 
 ## v5.2.0 (2026-11-17)
 ### New effects

@@ -40,6 +40,8 @@ const KNOWN = {
   reactionDiffusion: 'After a long jump forward in a video, the preview catches up over a few frames; an export grows frame by frame from the start.',
   textPortrait: 'On video, letters reflow each frame as the tones change.',
   ascii: 'Very small glyphs rasterise slightly differently in a small preview than in a large export.',
+  oilPaint: 'Paint is worked out on a copy at most 1600 px long; brush marks and canvas are drawn at full size.',
+  polarWarp: 'Infinite Spiral repeats the ring around the centre, so it suits pictures with something in the middle.',
   edge: 'Very fine texture (grass, gravel) can give a few more lines in a large export than in a small preview.',
 };
 const media = { both: 'Image, video', image: 'Image', video: 'Video' };

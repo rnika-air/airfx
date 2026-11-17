@@ -6,7 +6,10 @@ showcase.json, each with a different AirFx effect running on it live.
 
 To add or change media:
   1. Put the file in this folder (photo: JPG; video: MP4/H.264; gif: GIF).
-  2. Add a line for it to showcase.json, e.g. { "type": "photo", "src": "photo-4.jpg" }.
+  2. Add a line for it to showcase.json:
+     media   for the live showcase, e.g. { "type": "photo", "src": "photo-11.jpg", "effect": "halftone" }
+     stills  for the still tiles, e.g. { "src": "photo-12.jpg", "effect": "moire" }
+     Give every picture its own effect, and use each effect only once.
      Photos can have "focus": [x, y] (0 to 1) to choose what stays in frame,
      and "zoom" to crop in closer.
 

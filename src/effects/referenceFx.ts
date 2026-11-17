@@ -470,7 +470,7 @@ export const pixelCrusher: EffectDefinition = {
 
 /* ───────────── Shape Halftone ───────────── */
 
-const SHAPES: Record<string, (g: G, r: number) => void> = {
+const SHAPES: Record<string, (g: G, r: number, cell: number) => void> = {
   pill: (g, r) => { g.roundRect(-r * 1.5, -r * 0.6, r * 3, r * 1.2, r * 0.6); },
   diamond: (g, r) => { g.moveTo(0, -r * 1.3); g.lineTo(r * 1.3, 0); g.lineTo(0, r * 1.3); g.lineTo(-r * 1.3, 0); g.closePath(); },
   cross: (g, r) => { const t = r * 0.42, l = r * 1.3; g.rect(-l, -t, l * 2, t * 2); g.rect(-t, -l, t * 2, l * 2); },
@@ -478,6 +478,11 @@ const SHAPES: Record<string, (g: G, r: number) => void> = {
   hexagon: (g, r) => { for (let i = 0; i < 6; i++) { const a = (i * Math.PI) / 3; const x = Math.cos(a) * r * 1.15, y = Math.sin(a) * r * 1.15; if (i) g.lineTo(x, y); else g.moveTo(x, y); } g.closePath(); },
   star: (g, r) => { for (let i = 0; i < 10; i++) { const a = (i * Math.PI) / 5 - Math.PI / 2, q = i % 2 ? r * 0.6 : r * 1.5; const x = Math.cos(a) * q, y = Math.sin(a) * q; if (i) g.lineTo(x, y); else g.moveTo(x, y); } g.closePath(); },
   circle: (g, r) => { g.moveTo(r, 0); g.arc(0, 0, r, 0, 7); },
+  square: (g, r) => { const q = r * 0.92; g.rect(-q, -q, q * 2, q * 2); },
+  ring: (g, r) => { g.moveTo(r * 1.1, 0); g.arc(0, 0, r * 1.1, 0, Math.PI * 2); g.moveTo(r * 0.55, 0); g.arc(0, 0, r * 0.55, Math.PI * 2, 0, true); },
+  // Lines keep the full cell length and get thicker in the dark, like a line screen.
+  lines: (g, r, cell) => { g.rect(-cell * 0.51, -r * 0.62, cell * 1.02, r * 1.24); },
+  diagonal: (g, r, cell) => { g.rotate(Math.PI / 4); g.rect(-cell * 0.72, -r * 0.5, cell * 1.44, r); },
 };
 
 export const shapeHalftone: EffectDefinition = withContent({
@@ -533,7 +538,7 @@ export const shapeHalftone: EffectDefinition = withContent({
           ctx.fillStyle = `rgb(${ink2[0] + (ink[0] - ink2[0]) * k | 0},${ink2[1] + (ink[1] - ink2[1]) * k | 0},${ink2[2] + (ink[2] - ink2[2]) * k | 0})`;
         } else ctx.fillStyle = `rgb(${d[i]},${d[i + 1]},${d[i + 2]})`;
         ctx.beginPath();
-        shape(ctx, r);
+        shape(ctx, r, sp);
         ctx.fill();
         ctx.restore();
       }

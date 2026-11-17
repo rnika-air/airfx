@@ -39,7 +39,9 @@ export function LiveFx({ effects = LIVE_EFFECTS, every = 3200, offset = 0, only,
   const [ready, setReady] = useState(false);
 
   const item = media.length ? media[step % media.length] : null;
-  const fx = fxList.length ? fxList[step % fxList.length] : null;
+  // Each picture, clip and GIF has its own effect (showcase.json), so none is shown twice.
+  const own = item?.effect ? getEffect(item.effect) : undefined;
+  const fx = own ?? (fxList.length ? fxList[step % fxList.length] : null);
   const next = media.length ? media[(step + 1) % media.length] : null;
 
   // Next slide every few seconds.
