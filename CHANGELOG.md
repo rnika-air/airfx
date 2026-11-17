@@ -4,6 +4,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+
+## v5.3.0 (2026-11-17)
 ### New logo and opening screen
 - New AirFx logo: the swept A mark with the AirFx word, in lime on black, across the intro, log-in, About page, editor, phone menu, browser tab and app icons. The intro shows the textured version of the mark.
 - The intro keeps its familiar layout on black with lime highlights, and now has a halftone dot field that swells and lights up lime around your pointer (a slow drifting swell on touch screens).
