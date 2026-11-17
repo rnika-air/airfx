@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Wordmark } from './Wordmark';
+import { HomeLogo } from './Wordmark';
 import { AccountButton } from '../cloud/ui';
 
 export type AppMode = 'effects' | 'key' | 'cleanup' | 'depth' | 'depthlab' | 'live' | 'gesture' | 'timeline';
@@ -33,7 +33,7 @@ export function TopBar(p: Props) {
   return (
     <header className="topbar">
       <div className="topbar__brand">
-        <Wordmark />
+        <HomeLogo />
         <span className="topbar__tag">FX LAB · v{__APP_VERSION__}</span>
       </div>
 

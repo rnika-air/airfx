@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Wordmark } from '../components/Wordmark';
+import { HomeLogo, Wordmark } from '../components/Wordmark';
 import { LIBRARY } from '../effects/registry';
 import { previews } from '../intro/previews';
 import { LiveFx, TYPE_NAME } from '../intro/LiveFx';
@@ -73,7 +73,7 @@ export function About({ onClose }: { onClose: () => void }) {
       <header className="brandbar">
         <button className="pill" onClick={onClose}><span aria-hidden>←</span> Back</button>
         <span className="brandbar__mid mono">Information · v{__APP_VERSION__}</span>
-        <Wordmark />
+        <HomeLogo />
       </header>
       <nav className="ab__index" aria-label="Sections">
         {SECTIONS.map((s, i) => (

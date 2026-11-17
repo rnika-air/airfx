@@ -4,6 +4,16 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+### A new opening
+- The intro now opens like a motion-design studio site: on black, a cluster of lime halftone dots appears, swells and melts into wavy diagonal bands edged in pink and cyan, floods the screen lime, then breaks back up into the small lime dots that stay behind the page. The dots swell around your pointer (and drift slowly on touch screens). Skip Intro stays available throughout.
+- The intro layout is the interactive one again, now on black with lime highlights: the textured AirFx mark with a hand-drawn swash, the live preview laid over it, the effect tiles and the scrolling effect list.
+- Smooth on phones: the opening is worked out at a fixed size and scaled to the screen.
+
+### Logo
+- The logo is now the AirFx mark on its own, and it is a button: click it anywhere (editor, phone menu, About, log-in) to go back to the intro.
+- The browser tab shows the textured mark.
+- The installed app opens on black on every device, with launch screens for iPhone and iPad.
+
 
 ## v5.3.0 (2026-11-17)
 ### New logo and opening screen

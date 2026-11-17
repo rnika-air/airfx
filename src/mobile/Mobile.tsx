@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CATEGORY_ORDER, LIBRARY } from '../effects/registry';
 import { CATEGORY_LABELS, type EffectCategory } from '../effects/types';
 import { EffectThumb } from '../components/EffectThumb';
-import { Wordmark } from '../components/Wordmark';
+import { HomeLogo } from '../components/Wordmark';
 import { AccountButton } from '../cloud/ui';
 import type { AppMode } from '../components/TopBar';
 
@@ -100,7 +100,7 @@ export function MobileHeader({ mode, canUndo, canRedo, onUndo, onRedo, onMenu }:
   return (
     <header className="mhead">
       <button className="mhead__brand" onClick={onMenu} aria-label="Menu and workspaces">
-        <Wordmark />
+        <HomeLogo />
         <span className="mhead__ws mono">{ws?.name ?? 'Effects'} <span aria-hidden>▾</span></span>
       </button>
       <div className="mhead__actions">
@@ -121,7 +121,7 @@ export function MobileMenu({ mode, onMode, onClose, onAbout, onAi, onIntro }: { 
   return (
     <div className="mmenu" role="dialog" aria-modal="true" aria-label="Menu" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="mmenu__panel">
-        <div className="mmenu__head"><Wordmark /><button className="pill" onClick={onClose}>Close</button></div>
+        <div className="mmenu__head"><HomeLogo /><button className="pill" onClick={onClose}>Close</button></div>
         <p className="mmenu__label mono">Workspaces</p>
         <ul className="mmenu__list">
           {WORKSPACES.map((w) => (
