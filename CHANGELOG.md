@@ -4,6 +4,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+
+## v5.3.1 (2026-11-17)
 ### A new opening
 - The intro now opens like a motion-design studio site: on black, a cluster of lime halftone dots appears, swells and melts into wavy diagonal bands edged in pink and cyan, floods the screen lime, then breaks back up into the small lime dots that stay behind the page. The dots swell around your pointer (and drift slowly on touch screens). Skip Intro stays available throughout.
 - The intro layout is the interactive one again, now on black with lime highlights: the textured AirFx mark with a hand-drawn swash, the live preview laid over it, the effect tiles and the scrolling effect list.
