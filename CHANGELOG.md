@@ -4,6 +4,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+
+## v5.1.0 (2026-11-17)
 ### New look, made for phones
 - New intro screen: the AirFx wordmark, a live before/after preview cycling through real effects (Glitch 2.0, Moiré, Pixel Art, Ink Bleed, Dreamy, Scatter, Liquify and more) on a sample photo, and Enter AirFx / Create Account / Log In. A Skip Intro button jumps past the opening animation.
 - Redesigned log-in and sign-up screen that continues from the intro: log in, sign up, forgot password, show password, continue as guest, and a way back to the intro.
