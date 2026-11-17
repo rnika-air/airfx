@@ -11,7 +11,7 @@ import { C, R, S, T, rgbCss } from '../generative';
  * Works over the picture or the webcam, or on its own as a visualizer.
  */
 
-const BANDS: [string, string][] = [['off', 'Nothing'], ['level', 'Loudness'], ['bass', 'Bass'], ['mid', 'Mids'], ['treble', 'Highs'], ['beat', 'Beat']];
+const BANDS: [string, string][] = [['off', 'Nothing'], ['level', 'Loudness'], ['bass', 'Bass'], ['mid', 'Mids'], ['treble', 'Highs'], ['beat', 'Beat'], ['hit', 'Hits']];
 const band = (f: AudioFrame, k: string) => (k === 'off' ? 0 : (f.bands as unknown as Record<string, number>)[k] ?? 0);
 
 const memo = { t: -1, env: { level: 0, bass: 0, mid: 0, treble: 0, beat: 0 } as Record<string, number>, spin: 0 };
@@ -20,7 +20,7 @@ function testFrame(t: number): AudioFrame {
   const beat = (t * 2) % 1, kick = Math.exp(-beat * 7), N = 1024, spectrum = new Float32Array(N), wave = new Float32Array(2048);
   for (let i = 1; i < N; i++) { const f = Math.log(i + 1) / Math.log(N); spectrum[i] = Math.min(1, Math.exp(-((f - 0.3) ** 2) * 50) * (0.4 + kick * 0.6) + Math.exp(-((f - 0.65) ** 2) * 40) * (0.4 + 0.3 * Math.sin(t * 6 + f * 40))); }
   for (let i = 0; i < 2048; i++) wave[i] = Math.sin(i * 0.03 + t * 20) * (0.3 + kick * 0.5);
-  return { bands: { level: 0.4 + kick * 0.4, bass: kick, mid: 0.5 + 0.3 * Math.sin(t * 3), treble: 0.4 + 0.3 * Math.sin(t * 8), beat: beat < 0.15 ? 1 - beat * 6 : 0 }, spectrum, wave, binHz: 23.4375 };
+  return { bands: { level: 0.4 + kick * 0.4, bass: kick, mid: 0.5 + 0.3 * Math.sin(t * 3), treble: 0.4 + 0.3 * Math.sin(t * 8), beat: beat < 0.15 ? 1 - beat * 6 : 0, hit: beat < 0.1 ? 1 - beat * 10 : 0 }, spectrum, wave, binHz: 23.4375 };
 }
 
 /** Spectrum value for a fraction 0..1 along a log scale from 40 Hz to 12 kHz. */

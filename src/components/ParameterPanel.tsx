@@ -4,6 +4,8 @@ import { tracks } from '../ai/client';
 import { selection } from '../ai/selection';
 import { PropsEditor } from './PropsEditor';
 import { CONTENT_PRESETS, contentWarning } from '../content/content';
+import { Suggestions } from './Suggestions';
+import type { MediaAnalysis } from '../analysis/media';
 
 interface Props {
   effect: EffectDefinition | null;
@@ -11,6 +13,8 @@ interface Props {
   params: ParamValues;
   mods: ModMap | undefined;
   hasMedia: boolean;
+  /** The open picture or clip, analysed; null while there is none. */
+  analysis?: { a: MediaAnalysis | null; error: string | null; url: string } | null;
   onChange: (key: string, value: ParamValue) => void;
   onParams: (v: ParamValues) => void;
   onMod: (key: string, mod: AudioMod | null) => void;
@@ -21,7 +25,7 @@ interface Props {
 const BLENDS: [GlobalCompositeOperation, string][] = [['source-over', 'Normal'], ['multiply', 'Multiply'], ['screen', 'Screen'], ['overlay', 'Overlay'], ['soft-light', 'Soft Light'], ['difference', 'Difference'], ['lighter', 'Add'], ['color', 'Color'], ['luminosity', 'Luminosity']];
 
 /** Controls of the selected stack step. */
-export function ParameterPanel({ effect, item, params, mods, hasMedia, onChange, onParams, onMod, onItem, onReset }: Props) {
+export function ParameterPanel({ effect, item, params, mods, hasMedia, analysis, onChange, onParams, onMod, onItem, onReset }: Props) {
   if (!effect || !item) {
     return (
       <div className="panel-empty">
@@ -66,6 +70,7 @@ export function ParameterPanel({ effect, item, params, mods, hasMedia, onChange,
             </div>
           </div>
         )}
+        {hasMedia && analysis?.url && <Suggestions effect={effect} params={params} analysis={analysis.a} error={analysis.error} onChange={onChange} />}
         <PropsEditor defs={effect.params} values={params} onChange={onChange} mods={mods} onMod={onMod} audioDefaults={effect.audioDefaults} />
         {effect.supportsContent && params.cMode === 'typography' && (
           <div className="presetchips">

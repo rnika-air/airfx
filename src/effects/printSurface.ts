@@ -164,7 +164,7 @@ export const pointillism: EffectDefinition = withContent({
   category: 'texture',
   description: 'Repaints the image in thick separate dots, large first and fine on top.',
   params: [
-    R('count', 'Dots', 500, 40000, 100, 9000, 'Paint'),
+    R('count', 'Dots', 500, 40000, 100, 16000, 'Paint'),
     R('size', 'Dot Size', 1, 30, 0.25, 7, 'Paint'),
     R('vary', 'Size Variation', 0, 1, 0.01, 0.5, 'Paint'),
     R('jitter', 'Color Jitter', 0, 80, 1, 24, 'Paint', 'Breaks flat colour into neighbouring hues.'),
@@ -239,10 +239,10 @@ export const chrome: EffectDefinition = {
   description: 'Treats brightness as height and reflects a studio environment off the surface.',
   animated: (p) => (p.flow as number) > 0,
   params: [
-    R('soft', 'Smoothness', 0.5, 30, 0.25, 6, 'Surface'),
-    R('relief', 'Relief', 1, 40, 0.5, 14, 'Surface'),
-    R('bands', 'Reflection Bands', 1, 8, 0.1, 3, 'Surface'),
-    R('contrast', 'Contrast', 0.5, 3, 0.01, 1.5, 'Surface'),
+    R('soft', 'Smoothness', 0.5, 40, 0.25, 26, 'Surface'),
+    R('relief', 'Relief', 1, 40, 0.5, 7, 'Surface'),
+    R('bands', 'Reflection Bands', 1, 8, 0.1, 1.8, 'Surface'),
+    R('contrast', 'Contrast', 0.5, 3, 0.01, 1.25, 'Surface'),
     R('flow', 'Flow', 0, 2, 0.01, 0, 'Surface', 'Slides the reflection over time.'),
     S('metal', 'Metal', 'chrome', [['chrome', 'Chrome'], ['gold', 'Gold'], ['copper', 'Copper'], ['tint', 'Use Tint']], 'Color'),
     { ...C('tint', 'Metal Tint', '#e6ebf2'), visibleWhen: (v) => v.metal === 'tint' },
@@ -253,9 +253,10 @@ export const chrome: EffectDefinition = {
     const dark = hexToRgb(p.dark as string), m = p.metal as string, tint = m === 'gold' ? [255, 208, 110] : m === 'copper' ? [244, 150, 104] : m === 'tint' ? hexToRgb(p.tint as string) : hexToRgb('#e6ebf2');
     for (let i = 0; i < n; i++) {
       const a = nx(i, relief), b = ny(i, relief), nz = 1 / Math.hypot(a, b, 1);
-      // Reflection vector indexed into a horizon-style environment.
-      const v = (b * nz + 1) * 0.5 + (a * nz) * 0.25 + fl;
-      let e = 0.5 + 0.5 * Math.cos(v * bands * Math.PI * 2);
+      // Reflection vector indexed into a banded studio environment. A flat
+      // surface reflects the middle tone; slopes run through light and dark bands.
+      const v = b * nz + a * nz * 0.5 + fl;
+      let e = 0.5 + 0.5 * Math.sin(v * bands * Math.PI);
       e = Math.min(1, Math.max(0, (e - 0.5) * ct + 0.5));
       const hi = Math.pow(e, 6) * 0.5;
       for (let c = 0; c < 3; c++) o[i * 4 + c] = clamp255(lerp(dark[c], tint[c], e) + hi * 255);
@@ -272,7 +273,7 @@ export const reededGlass: EffectDefinition = {
   description: 'Looks through ribbed glass: each reed bends the image and splits light at its edges.',
   params: [
     R('size', 'Reed Size', 4, 120, 1, 34, 'Glass'),
-    S('pattern', 'Reed Pattern', 'lines', [['lines', 'Lines'], ['grid', 'Grid'], ['rings', 'Concentric'], ['chevron', 'Chevron']], 'Glass'),
+    S('pattern', 'Reed Pattern', 'lines', [['lines', 'Lines'], ['waves', 'Waves'], ['grid', 'Grid'], ['rings', 'Concentric'], ['chevron', 'Chevron']], 'Glass'),
     R('angle', 'Angle', -90, 90, 1, 0, 'Glass'),
     R('bend', 'Refraction', 0, 2, 0.01, 0.8, 'Glass'),
     R('disperse', 'Light Dispersion', 0, 1, 0.01, 0.35, 'Glass'),
@@ -296,6 +297,8 @@ export const reededGlass: EffectDefinition = {
         const px = (x - cx) * ca + (y - cy) * sa, py = -(x - cx) * sa + (y - cy) * ca;
         let u = px / s, u2 = 0;
         if (pat === 'rings') u = Math.hypot(px, py) / s;
+        // Fluted glass bent into waves: each reed swings sideways along its length.
+        else if (pat === 'waves') u = (px + Math.sin(py / (s * 3.2)) * s * 1.4) / s;
         else if (pat === 'chevron') u = (px + Math.abs(((py / s) % 2 + 2) % 2 - 1) * s) / s;
         else if (pat === 'grid') u2 = py / s;
         const f = u - Math.floor(u) - 0.5, f2 = pat === 'grid' ? u2 - Math.floor(u2) - 0.5 : 0;
@@ -411,7 +414,8 @@ export const holographic: EffectDefinition = {
   ],
   render({ src, ctx, width: w, height: h, params: p, unit, time }) {
     const L = toLuma(src), out = ctx.createImageData(w, h), o = out.data, sp = (p.spread as number) * unit, sc = p.scan as number, am = (p.waveAmt as number) * unit, fq = p.waveFreq as number, t = time * (p.speed as number) * 4, sat = p.sat as number, ct = p.contrast as number, tint = hexToRgb(p.tint as string);
-    const line = Math.max(2, Math.round(3 * unit)), tmp = new Uint8ClampedArray(4);
+    // Scanline pitch in units (not rounded pixels), so preview and export show the same lines.
+    const line = Math.max(1, 3 * unit), tmp = new Uint8ClampedArray(4);
     for (let y = 0; y < h; y++) {
       const off = Math.sin((y / h) * fq * Math.PI * 2 + t) * am;
       for (let x = 0; x < w; x++) {
@@ -426,7 +430,7 @@ export const holographic: EffectDefinition = {
           const v = lerp(lum * tint[c], tmp[c], 0.5) + g * hue * 255 * sat;
           o[k + c] = clamp255(v);
         }
-        const dark = y % (line * 2) < line ? 1 - sc * 0.7 : 1;
+        const dark = (y / (line * 2)) % 1 < 0.5 ? 1 - sc * 0.7 : 1;
         o[k] *= dark; o[k + 1] *= dark; o[k + 2] *= dark; o[k + 3] = 255;
       }
     }
@@ -471,8 +475,8 @@ export const grunge: EffectDefinition = {
   category: 'texture',
   description: 'Crushes shadows to black, lifts contrast and scatters grainy pigment through the mids.',
   params: [
-    R('gamma', 'Shadow Crush', 0.3, 3, 0.01, 1.7, 'Grunge'),
-    R('contrast', 'Contrast', 0.5, 3, 0.01, 1.5, 'Grunge'),
+    R('gamma', 'Shadow Crush', 0.3, 3, 0.01, 1.35, 'Grunge'),
+    R('contrast', 'Contrast', 0.5, 3, 0.01, 1.35, 'Grunge'),
     R('grain', 'Granulation Scale', 0.5, 12, 0.1, 2.5, 'Grunge'),
     R('amount', 'Pigment Speckle', 0, 1, 0.01, 0.55, 'Grunge'),
     R('spill', 'Spill Reach', 0, 1, 0.01, 0.3, 'Grunge'),
@@ -480,12 +484,16 @@ export const grunge: EffectDefinition = {
   ],
   render({ src, ctx, width: w, height: h, params: p, unit }) {
     const out = ctx.createImageData(w, h), o = out.data, g = p.gamma as number, ct = p.contrast as number, sc = Math.max(1, (p.grain as number) * unit), am = p.amount as number, sp = p.spill as number, seed = p.seed as number, u = 1 / unit;
+    // Contrast turns around the picture's own middle tone, so a dark photo is not pushed to black.
+    let sum = 0, cnt = 0;
+    for (let k = 0; k < src.data.length; k += 4 * 13) { sum += Math.pow((0.2126 * src.data[k] + 0.7152 * src.data[k + 1] + 0.0722 * src.data[k + 2]) / 255, g); cnt++; }
+    const pivot = Math.min(0.6, Math.max(0.2, cnt ? sum / cnt : 0.5));
     for (let y = 0; y < h; y++)
       for (let x = 0; x < w; x++) {
         const k = (y * w + x) * 4, speck = hash2((x / sc) | 0, (y / sc) | 0, seed), blot = fbm(x * u * 0.01, y * u * 0.01, seed + 2, 3);
         for (let c = 0; c < 3; c++) {
           let v = Math.pow(src.data[k + c] / 255, g);
-          v = (v - 0.5) * ct + 0.5;
+          v = (v - pivot) * ct + pivot;
           const mid = 1 - Math.abs(v - 0.5) * 2;
           v += (speck - 0.5) * am * Math.max(0, mid);
           if (blot < sp * 0.7) v *= 0.35;

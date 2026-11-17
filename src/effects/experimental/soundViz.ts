@@ -48,7 +48,7 @@ function testFrame(t: number): AudioFrame {
     spectrum[i] = Math.min(1, low + mid + hi);
   }
   for (let i = 0; i < 2048; i++) wave[i] = Math.sin(i * 0.02 + t * 18) * (0.3 + kick * 0.5) + Math.sin(i * 0.071 + t * 31) * 0.18 + Math.sin(i * 0.0047 + t * 2) * 0.12;
-  return { bands: { level: 0.35 + kick * 0.5, bass: kick, mid: 0.5 + 0.3 * Math.sin(t * 3), treble: 0.4 + 0.3 * Math.sin(t * 7), beat: beat < 0.16 ? Math.exp(-beat * 6) : 0 }, spectrum, wave, binHz: 23.4375 };
+  return { bands: { level: 0.35 + kick * 0.5, bass: kick, mid: 0.5 + 0.3 * Math.sin(t * 3), treble: 0.4 + 0.3 * Math.sin(t * 7), beat: beat < 0.16 ? Math.exp(-beat * 6) : 0, hit: beat < 0.1 ? 1 - beat * 10 : 0 }, spectrum, wave, binHz: 23.4375 };
 }
 
 /** The spectrum on a log scale between two frequencies, in `n` bins, with fast attack and smooth release. */

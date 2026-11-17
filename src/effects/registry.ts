@@ -42,6 +42,8 @@ import { TRENDS } from './trends';
 import { EXPERIMENTAL } from './experimental';
 import { adjustMaster } from './adjust/master';
 import { V43 } from './v43';
+import { AUTO_TONE } from './tone';
+import { V52 } from './v52';
 
 /** The five flagship effects of v0.1. */
 export const CORE_EFFECT_IDS = ['moire', 'scatter', 'halftone', 'glitch', 'filmGrain'];
@@ -64,10 +66,27 @@ export const EFFECTS: EffectDefinition[] = [
   ...TRENDS,
   ...EXPERIMENTAL,
   ...V43,
+  ...V52,
   slide, stack, stutter,
   ...STACKS,
   adjustMaster,
 ];
+
+/**
+ * Effects whose look depends on fixed brightness levels (cut-offs, dot sizes,
+ * glyph ramps, palettes mapped from tone). They get the Auto Tone switch, so
+ * a night shot, a bright page and a flat grey photo all give a full result.
+ */
+const TONE_DRIVEN = [
+  'threshold', 'posterize', 'duotone', 'dithering', 'ditherLab', 'dots', 'halftone', 'ascii', 'stippling', 'moire', 'patterns',
+  'scatter', 'cellular', 'radialArray', 'waveLines', 'metaballs', 'newspaper', 'stencil', 'cyanotype', 'textPortrait', 'pointillism',
+  'shapeHalftone', 'pixelCrusher', 'linerPro', 'cmykPrint', 'recolor', 'gradients', 'pixelGradient', 'modulation', 'thermal',
+  'posterGradient', 'topoSurvey', 'printAnimate', 'knitwear', 'contourField', 'nodeNetwork', 'circuitBoard',
+];
+for (const id of TONE_DRIVEN) {
+  const e = EFFECTS.find((x) => x.id === id);
+  if (e && !e.params.some((p) => p.key === 'autoTone')) e.params = [...e.params, AUTO_TONE];
+}
 
 /** What the library lists. */
 export const LIBRARY = EFFECTS.filter((e) => !e.hidden);

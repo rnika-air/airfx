@@ -12,9 +12,10 @@ export type EffectCategory =
 export type MediaCompat = 'both' | 'image' | 'video';
 
 /** Audio features an effect parameter can follow. */
-export type Band = 'level' | 'bass' | 'mid' | 'treble' | 'beat';
+/** `hit` is a transient: any sudden attack (snare, clap, pluck), not only the kick. */
+export type Band = 'level' | 'bass' | 'mid' | 'treble' | 'beat' | 'hit';
 export type AudioBands = Record<Band, number>;
-export const ZERO_BANDS: AudioBands = { level: 0, bass: 0, mid: 0, treble: 0, beat: 0 };
+export const ZERO_BANDS: AudioBands = { level: 0, bass: 0, mid: 0, treble: 0, beat: 0, hit: 0 };
 
 /** A link from one numeric parameter to an audio band. amount ∈ [-1, 1] of the param range. */
 export interface AudioMod {

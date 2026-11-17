@@ -43,6 +43,8 @@ const THUMB_PARAMS: Record<string, Record<string, boolean | string | number>> = 
   soundViz: { testSignal: true }, audioShapes: { testSignal: true },
   speechType: { shapeFrom: 'dark', level: 0.5, fontSize: 9, textSource: 'manual' },
   particleSim: { background: 'color', bgColor: '#061033', dissolve: 0.5, count: 900, size: 1.4 },
+  // A coarser grid: the thumbnail is tiny, and the full grid would hold up the library.
+  reactionDiffusion: { detail: 120, warmup: 700 },
 };
 
 /** Marked with drawn icons below because they show nothing without analysis. */

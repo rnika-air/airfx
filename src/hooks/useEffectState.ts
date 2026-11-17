@@ -78,13 +78,23 @@ function reducer(s: State, a: Action): State {
   }
 }
 
+/**
+ * Switches added in 5.2 that change how an effect looks. New steps start with
+ * them on; a step saved before 5.2 gets the value matching its old look.
+ */
+const SINCE_5_2: ParamValues = { autoTone: false, keepBrightness: false, trueHighlights: false, steady: false };
+
 /** Accepts current snapshots and pre-stack projects (one active effect). */
 function migrate(snap: StackSnapshot | LegacySnapshot): StackSnapshot {
   if ('items' in snap && Array.isArray(snap.items)) {
     const items = snap.items
       .map((i) => {
         const eff = getEffect(i.effectId);
-        return eff ? { ...newItem(eff), ...i, params: { ...defaultParams(eff), ...i.params } } : null;
+        if (!eff) return null;
+        // Saved before these switches existed: keep the look it was saved with.
+        const legacy: ParamValues = {};
+        for (const [k, v] of Object.entries(SINCE_5_2)) if (eff.params.some((p) => p.key === k) && !(k in (i.params ?? {}))) legacy[k] = v;
+        return { ...newItem(eff), ...i, params: { ...defaultParams(eff), ...i.params, ...legacy } };
       })
       .filter(Boolean) as StackItem[];
     const adjust = snap.adjust ? { ...freshAdjust(), ...snap.adjust, params: { ...defaultParams(adjustMaster), ...snap.adjust.params } } : freshAdjust();

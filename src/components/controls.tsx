@@ -10,6 +10,7 @@ export const BAND_OPTIONS: { value: Band; label: string }[] = [
   { value: 'mid', label: 'Mid' },
   { value: 'treble', label: 'High' },
   { value: 'beat', label: 'Beat' },
+  { value: 'hit', label: 'Hit' },
 ];
 
 /** Inline audio link editor shown under a linked slider. */
@@ -17,7 +18,7 @@ export function ModRow({ mod, onChange, onRemove }: { mod: AudioMod; onChange: (
   const pct = ((mod.amount + 1) / 2) * 100;
   return (
     <div className="modrow">
-      <div className="segmented segmented--5 segmented--tiny" role="radiogroup" aria-label="Audio band">
+      <div className="segmented segmented--6 segmented--tiny" role="radiogroup" aria-label="Audio band">
         {BAND_OPTIONS.map((b) => (
           <button key={b.value} role="radio" aria-checked={mod.band === b.value} className={mod.band === b.value ? 'on' : ''} onClick={() => onChange({ ...mod, band: b.value })}>
             {b.label}

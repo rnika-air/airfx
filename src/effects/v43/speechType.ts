@@ -48,6 +48,13 @@ function silhouette(p: ParamValues, frame: HTMLCanvasElement, src: ImageData, w:
   return mask;
 }
 
+/** Brighter-than-middle areas, softened: a stand-in silhouette taken from the picture itself. */
+function toneMask(src: ImageData) {
+  const L = toLuma(src), s = [...L.filter((_, i) => i % 29 === 0)].sort((a, b) => a - b), mid = s[s.length >> 1] ?? 0.5, m = new Float32Array(L.length);
+  for (let i = 0; i < L.length; i++) m[i] = Math.min(1, Math.max(0, (L[i] - mid) * 8 + 0.5));
+  return m;
+}
+
 export const speechType: EffectDefinition = {
   id: 'speechType', name: 'Speech Typography', category: 'type',
   description: 'Words you speak fill your silhouette, live from the webcam and microphone, or from a video and its sound.',
@@ -93,7 +100,9 @@ export const speechType: EffectDefinition = {
     const bg = p.background as string;
     if (bg === 'color') { ctx.fillStyle = p.bgColor as string; ctx.fillRect(0, 0, w, h); }
     else if (bg !== 'clear') { ctx.drawImage(frameC, 0, 0); if (bg === 'dim') { ctx.fillStyle = `rgba(0,0,0,${p.dim})`; ctx.fillRect(0, 0, w, h); } }
-    const mask = silhouette(p, frameC, src, w, h, time, key);
+    const found = silhouette(p, frameC, src, w, h, time, key);
+    // Until tracking or a selection exists, the picture's own light shapes the words, so it is never a flat wall of text.
+    const mask = found ?? toneMask(src);
     const gho = p.ghost as number;
     if (gho > 0 && bg === 'color') { ctx.globalAlpha = gho; ctx.drawImage(frameC, 0, 0); ctx.globalAlpha = 1; }
 
@@ -138,7 +147,7 @@ export const speechType: EffectDefinition = {
       g.globalCompositeOperation = 'source-over';
     }
     ctx.drawImage(layer, 0, 0);
-    if (!mask) {
+    if (!found) {
       ctx.fillStyle = 'rgba(255,255,255,.75)';
       ctx.font = `${Math.round(12 * unit)}px monospace`;
       ctx.fillText(p.shapeFrom === 'body' ? (vision.ready('pose') ? 'NO PERSON FOUND' : 'LOAD BODY TRACKING TO FIND THE SILHOUETTE') : 'NO SELECTION YET', 12 * unit, h - 14 * unit);

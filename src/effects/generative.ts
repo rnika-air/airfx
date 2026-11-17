@@ -63,7 +63,7 @@ export const nodeNetwork: EffectDefinition = withContent({
     C('colA', 'Color A', '#36e0ff', 'Style'),
     C('colB', 'Color B', '#1a3dff', 'Style'),
     C('bg', 'Background', '#050608', 'Style'),
-    R('keep', 'Original Opacity', 0, 1, 0.01, 0.12, 'Style'),
+    R('keep', 'Original Opacity', 0, 1, 0.01, 0.35, 'Style'),
   ],
   render({ src, ctx, width: w, height: h, params: p, unit, time }) {
     ground(ctx, src, w, h, p.bg as string, p.keep as number);

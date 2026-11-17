@@ -17,11 +17,11 @@ export const stippling: EffectDefinition = {
     { key: 'spacing', label: 'Spacing', type: 'range', group: 'Distribution', min: 1.5, max: 20, step: 0.1, default: 3.5 },
     { key: 'jitter', label: 'Jitter', type: 'range', group: 'Distribution', min: 0, max: 1, step: 0.01, default: 0.9 },
     { key: 'seed', label: 'Seed', type: 'seed', group: 'Distribution', default: 7 },
-    { key: 'dotSize', label: 'Dot Size', type: 'range', group: 'Dots', min: 0.3, max: 10, step: 0.05, default: 1.6 },
+    { key: 'dotSize', label: 'Dot Size', type: 'range', group: 'Dots', min: 0.3, max: 10, step: 0.05, default: 3 },
     { key: 'sizeVar', label: 'Size Variation', type: 'range', group: 'Dots', min: 0, max: 1, step: 0.01, default: 0.3 },
     { key: 'contrast', label: 'Contrast', type: 'range', group: 'Tone', min: 0.2, max: 3, step: 0.01, default: 1.3 },
     { key: 'brightness', label: 'Brightness', type: 'range', group: 'Tone', min: -0.6, max: 0.6, step: 0.01, default: 0.05 },
-    { key: 'gamma', label: 'Tone Curve', type: 'range', group: 'Tone', min: 0.3, max: 3, step: 0.01, default: 1.4, hint: 'Higher values clear the highlights.' },
+    { key: 'gamma', label: 'Tone Curve', type: 'range', group: 'Tone', min: 0.3, max: 3, step: 0.01, default: 1.05, hint: 'Higher values clear the highlights.' },
     { key: 'invert', label: 'Invert', type: 'toggle', group: 'Tone', default: false },
     {
       key: 'colorMode', label: 'Color Mode', type: 'select', group: 'Color', default: 'ink',
@@ -62,7 +62,8 @@ export const stippling: EffectDefinition = {
         let tone = 1 - adjust(luminance(d[i], d[i + 1], d[i + 2]), brightness, contrast);
         if (invert) tone = 1 - tone;
         if (keep > Math.pow(tone, gamma)) continue;
-        const r = r0 * (1 - sizeVar * 0.5 + sizeVar * sz);
+        // Darker areas also get slightly larger dots, so shadows can fill in like real stippling.
+        const r = r0 * (1 - sizeVar * 0.5 + sizeVar * sz) * (0.7 + 0.5 * tone);
         if (original) {
           ctx.fillStyle = `rgb(${d[i]},${d[i + 1]},${d[i + 2]})`;
           ctx.beginPath();

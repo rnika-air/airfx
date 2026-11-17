@@ -9,6 +9,7 @@ import { dithering, posterize } from './colorEffects';
 import { stars } from './stars';
 import { printAnimate } from './printAnimate';
 import { airbrush, glyphArray } from './referenceFx';
+import { AUTO_TONE } from './tone';
 
 /**
  * Stacks: ready-made looks built from two effects layered with tuned
@@ -52,6 +53,8 @@ function makeStack(def: { id: string; name: string; description: string; params:
         ctx.globalCompositeOperation = 'source-over';
         ctx.clearRect(0, 0, width, height);
         const params = sanitizeParams(step.effect, { ...defaultParams(step.effect), ...step.base, ...(step.map?.(input.params) ?? {}) });
+        // The renderer already applied the stack's own Auto Tone; inner steps never repeat it.
+        if (params.autoTone === true) params.autoTone = false;
         step.effect.render({ ...input, src, srcCanvas, ctx, params });
         if (!last) {
           srcCanvas = ctx.canvas;
@@ -91,10 +94,11 @@ export const redData = makeStack({
     { key: 'contrast', label: 'Contrast', type: 'range', group: 'Stack', min: 0.3, max: 3, step: 0.01, default: 1.4 },
     { key: 'charset', label: 'Characters', type: 'select', group: 'Stack', default: 'binary', options: [{ value: 'binary', label: 'Binary' }, { value: 'standard', label: 'Standard' }, { value: 'blocks', label: 'Blocks' }] },
     { key: 'red', label: 'Red', type: 'color', group: 'Stack', default: '#ff1f1f' },
+    AUTO_TONE,
   ],
   steps: [
-    { effect: recolor, base: { mode: 'gradient', palette: 'custom', c1: '#000000', c2: '#2a0000' }, map: (p) => ({ contrast: p.contrast, c3: p.red, c4: '#ffd9d0' }) },
-    { effect: ascii, base: { colorMode: 'original', background: '#060000', bold: true }, map: (p) => ({ size: p.size, charset: p.charset }) },
+    { effect: recolor, base: { mode: 'gradient', palette: 'custom', c1: '#1a0202', c2: '#8a120a' }, map: (p) => ({ contrast: p.contrast, c3: p.red, c4: '#ffd9d0' }) },
+    { effect: ascii, base: { colorMode: 'original', background: '#060000', bold: true, fontScale: 1.3, brightness: 0.12 }, map: (p) => ({ size: p.size, charset: p.charset }) },
   ],
 });
 
@@ -128,6 +132,7 @@ export const multiThreshold = makeStack({
     { key: 'c2', label: 'Low Mid', type: 'color', group: 'Colors', default: '#3d2bff' },
     { key: 'c3', label: 'High Mid', type: 'color', group: 'Colors', default: '#ff4f2e' },
     { key: 'c4', label: 'Highlight', type: 'color', group: 'Colors', default: '#f3efe2' },
+    AUTO_TONE,
   ],
   steps: [
     { effect: posterize, base: { levels: 4, brightness: 0 }, map: (p) => ({ levels: p.levels, contrast: p.contrast }) },
@@ -143,6 +148,7 @@ export const gameboy = makeStack({
     { key: 'pixel', label: 'Pixel Size', type: 'range', group: 'Stack', min: 1, max: 12, step: 0.5, default: 3.5 },
     { key: 'contrast', label: 'Contrast', type: 'range', group: 'Stack', min: 0.3, max: 3, step: 0.01, default: 1.2 },
     { key: 'method', label: 'Dither', type: 'select', group: 'Stack', default: 'bayer', options: [{ value: 'bayer', label: 'Bayer' }, { value: 'floyd', label: 'Floyd–Steinberg' }] },
+    AUTO_TONE,
   ],
   steps: [
     { effect: dithering, base: { levels: 4, colorDither: false, dark: '#000000', light: '#ffffff' }, map: (p) => ({ pixel: p.pixel, contrast: p.contrast, method: p.method }) },

@@ -30,6 +30,7 @@ Thumbs.db
 # Local test tools (not part of the app)
 .tools/
 dist-cloudtest
+qa/out/
 
 # Original camera files for public/showcase (large, may hold location data)
 showcase-src/

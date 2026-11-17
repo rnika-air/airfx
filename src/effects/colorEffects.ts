@@ -1,5 +1,6 @@
 ﻿import type { EffectDefinition, RenderInput } from './types';
 import { adjust, boxBlur, clamp255, hash2, hexToRgb, luminance } from '../utils/imageProcessing';
+import { STEADY, Steady } from './tone';
 
 /** Helper for simple per-pixel colour mappings. */
 function mapPixels(
@@ -233,6 +234,7 @@ export const rgbShift: EffectDefinition = {
 };
 
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const steadyDither = new Steady();
 
 export const dithering: EffectDefinition = {
   id: 'dithering',
@@ -257,8 +259,9 @@ export const dithering: EffectDefinition = {
     { key: 'contrast', label: 'Contrast', type: 'range', group: 'Tone', min: 0.2, max: 3, step: 0.01, default: 1.1 },
     { key: 'dark', label: 'Dark Color', type: 'color', group: 'Color', default: '#0c0c0c', visibleWhen: (v) => !v.colorDither },
     { key: 'light', label: 'Light Color', type: 'color', group: 'Color', default: '#c6ff2e', visibleWhen: (v) => !v.colorDither },
+    STEADY,
   ],
-  render({ src, ctx, width, height, params, unit }) {
+  render({ src, ctx, width, height, params, unit, time }) {
     const px = Math.max(1, Math.round((params.pixel as number) * unit));
     const w = Math.ceil(width / px), h = Math.ceil(height / px);
     const n = (params.levels as number) - 1;
@@ -278,6 +281,7 @@ export const dithering: EffectDefinition = {
         }
       }
     }
+    const before = params.steady ? Float32Array.from(buf) : null;
     if (params.method === 'bayer') {
       for (let y = 0; y < h; y++)
         for (let x = 0; x < w; x++) {
@@ -304,6 +308,7 @@ export const dithering: EffectDefinition = {
             }
           }
     }
+    if (before) steadyDither.apply(`${w}x${h}|${JSON.stringify(params)}`, time, before, chans, buf, chans);
     const dk = hexToRgb(params.dark as string);
     const lt = hexToRgb(params.light as string);
     const out = ctx.createImageData(width, height);

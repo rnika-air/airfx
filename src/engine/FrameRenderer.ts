@@ -6,9 +6,10 @@ import { editedDepth } from '../effects/airDepth';
 import { selection } from '../ai/selection';
 import { resample } from '../effects/airKey';
 import { perf } from './perf';
+import { ToneTracker } from '../effects/tone';
 
 /** Read analysis or earlier frames, so their output cannot be reused by parameters alone. */
-const UNCACHEABLE = new Set(['airKey', 'airDepth', 'airCleanup', 'datamosh', 'stutter', 'motionTrails', 'lineScan', 'blobTracker', 'inkBleed', 'soundViz', 'glitch2', 'reveal', 'particleSim', 'speechType', 'audioShapes', 'thermal', 'crayon']);
+const UNCACHEABLE = new Set(['airKey', 'airDepth', 'airCleanup', 'datamosh', 'stutter', 'motionTrails', 'lineScan', 'blobTracker', 'inkBleed', 'soundViz', 'glitch2', 'reveal', 'particleSim', 'speechType', 'audioShapes', 'thermal', 'crayon', 'imageReactor', 'reactionDiffusion', 'audioPulse']);
 const stepKey = (l: RenderLayer) => `${l.effect.id}|${JSON.stringify(l.params)}|${l.mix ?? 100}|${l.blend ?? ''}`;
 
 /** Reads analysis results already in memory. Never runs a model. */
@@ -62,6 +63,7 @@ export class FrameRenderer {
   private a = createCanvas(1, 1);
   private b = createCanvas(1, 1);
   private kept = new Map<string, HTMLCanvasElement>();
+  private tone = new ToneTracker();
   /** Time of each step in the last frame. */
   steps: { name: string; ms: number }[] = [];
 
@@ -127,16 +129,18 @@ export class FrameRenderer {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
       ctx.clearRect(0, 0, w, h);
+      const params = sanitizeParams(layer.effect, layer.params);
+      // Tone-driven steps see the picture with its own tones stretched (Auto Tone).
+      const from = params.autoTone === true ? this.tone.apply(`${n}:${layer.effect.id}`, cur, w, h, req.time ?? 0) : cur;
       // Pixels are read only if the step asks for them: many steps only draw the canvas.
-      const from = cur;
       let src: ImageData | null = null;
       const input = {
         get src() { return (src ??= get2d(from, true).getImageData(0, 0, w, h)); },
-        srcCanvas: cur,
+        srcCanvas: from,
         ctx,
         width: w,
         height: h,
-        params: sanitizeParams(layer.effect, layer.params),
+        params,
         unit: Math.max(w, h) / 1000,
         time: req.time ?? 0,
         frame: req.frame ?? 0,
@@ -192,6 +196,7 @@ export class FrameRenderer {
   /** Release the work buffer memory. */
   dispose() {
     this.kept.clear();
+    this.tone.clear();
     this.a.width = this.a.height = this.b.width = this.b.height = 1;
   }
 }

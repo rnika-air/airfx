@@ -36,20 +36,20 @@ export const thermal: EffectDefinition = {
   description: 'A simulated heat camera. Heat comes from nearness, a subject, warm colours or brightness, not from real temperature.',
   animated: (p) => (p.shimmer as number) > 0 || (p.noise as number) > 0,
   params: [
-    S('heatFrom', 'Heat Comes From', 'proximity', [['proximity', 'Nearness (Depth)'], ['subject', 'Selected Subject'], ['warmth', 'Warm Colors'], ['brightness', 'Brightness'], ['mix', 'Mix Of All']], 'Heat', ),
+    S('heatFrom', 'Heat Comes From', 'auto', [['auto', 'Auto (Best Available)'], ['proximity', 'Nearness (Depth)'], ['subject', 'Selected Subject'], ['warmth', 'Warm Colors'], ['brightness', 'Brightness'], ['mix', 'Mix Of All']], 'Heat', ),
     { ...R('mixDepth', 'Nearness Weight', 0, 1, 0.01, 0.5, 'Heat'), visibleWhen: (v) => v.heatFrom === 'mix' },
     { ...R('mixSubject', 'Subject Weight', 0, 1, 0.01, 0.5, 'Heat'), visibleWhen: (v) => v.heatFrom === 'mix' },
     { ...R('mixWarm', 'Warm Color Weight', 0, 1, 0.01, 0.3, 'Heat'), visibleWhen: (v) => v.heatFrom === 'mix' },
     { ...R('mixBright', 'Brightness Weight', 0, 1, 0.01, 0.3, 'Heat'), visibleWhen: (v) => v.heatFrom === 'mix' },
     T('bodyHeat', 'Subject Runs Warm', true, 'Heat'),
-    R('intensity', 'Temperature', -1, 1, 0.01, 0.1, 'Heat', 'Shifts the whole scene hotter or cooler.'),
-    R('heatContrast', 'Heat Contrast', 0.3, 4, 0.01, 1.4, 'Heat'),
+    R('intensity', 'Temperature', -1, 1, 0.01, -0.04, 'Heat', 'Shifts the whole scene hotter or cooler.'),
+    R('heatContrast', 'Heat Contrast', 0.3, 4, 0.01, 1.15, 'Heat'),
     R('sensitivity', 'Sensitivity', 0.2, 3, 0.01, 1, 'Heat', 'Low values show only the hottest areas.'),
     R('rangeLow', 'Color Range Low', 0, 0.95, 0.01, 0.05, 'Heat'),
     R('rangeHigh', 'Color Range High', 0.05, 1, 0.01, 0.95, 'Heat'),
     S('palette', 'Heat Palette', 'iron', [['iron', 'Iron (Black-Purple-Red-Yellow)'], ['rainbow', 'Rainbow'], ['whiteHot', 'White Hot'], ['blackHot', 'Black Hot'], ['arctic', 'Arctic'], ['lava', 'Lava'], ['custom', 'Custom']], 'Palette'),
     ...[C('c1', 'Coldest', '#000000', 'Palette'), C('c2', 'Cool', '#4b0c7a', 'Palette'), C('c3', 'Warm', '#f0461b', 'Palette'), C('c4', 'Hottest', '#ffe14d', 'Palette')].map((d) => ({ ...d, visibleWhen: (v: Record<string, unknown>) => v.palette === 'custom' })),
-    R('glow', 'Heat Glow', 0, 2, 0.01, 0.6, 'Look'),
+    R('glow', 'Heat Glow', 0, 2, 0.01, 0.35, 'Look'),
     R('blur', 'Sensor Softness', 0, 20, 0.1, 4, 'Look'),
     R('pixel', 'Sensor Resolution', 0, 30, 0.5, 0, 'Look', 'Bigger blocks look like a low-resolution thermal sensor. 0 is off.'),
     R('edges', 'Edge Detection', 0, 1, 0.01, 0.25, 'Look'),
@@ -61,6 +61,7 @@ export const thermal: EffectDefinition = {
     { key: 'seed', label: 'Seed', type: 'seed', default: 7, group: 'Overlay' },
   ],
   presets: [
+    { name: 'Auto Heat', values: { heatFrom: 'auto' } },
     { name: 'Proximity Heat', values: { heatFrom: 'proximity' } },
     { name: 'Body Heat (Subject)', values: { heatFrom: 'subject', palette: 'iron', glow: 0.9 } },
     { name: 'White Hot', values: { palette: 'whiteHot', edges: 0, glow: 0.3 } },
@@ -70,7 +71,7 @@ export const thermal: EffectDefinition = {
   ],
   render({ src, ctx, width: w, height: h, params: p, unit, time, frame }) {
     const n = w * h, d = src.data, L = toLuma(src), from = p.heatFrom as string;
-    const depth = from === 'proximity' || from === 'mix' ? editedDepth(w, h, time) : null;
+    const depth = from === 'proximity' || from === 'mix' || from === 'auto' ? editedDepth(w, h, time) : null;
     const sel = selection.union(time) ?? tracks.matte.at(time);
     const subject = sel ? resample(sel, w, h) : null;
     const near = depth ?? (from === 'proximity' || from === 'mix' ? guessNear(w, h, L) : null);
@@ -78,7 +79,9 @@ export const thermal: EffectDefinition = {
     for (let i = 0; i < n; i++) {
       const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2], warm = Math.max(0, Math.min(1, (r - b) / 255 * 1.4 + (r + g * 0.5) / 765));
       let v: number;
-      if (from === 'proximity') v = near![i];
+      // Auto: a depth map when one exists, otherwise what the picture shows (warm colours and light).
+      if (from === 'auto') v = depth ? depth[i] * 0.6 + (warm * 0.5 + L[i] * 0.5) * 0.4 : warm * 0.45 + L[i] * 0.55;
+      else if (from === 'proximity') v = near![i];
       else if (from === 'subject') v = subject ? 0.25 + subject[i] * 0.6 + L[i] * 0.15 : L[i];
       else if (from === 'warmth') v = warm;
       else if (from === 'brightness') v = L[i];

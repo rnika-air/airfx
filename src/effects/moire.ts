@@ -1,5 +1,6 @@
 import type { EffectDefinition } from './types';
 import { BLEND_OPTIONS, blendChannel, hexToRgb, luminance, type BlendMode } from '../utils/imageProcessing';
+import { KEEP_BRIGHTNESS, matchBrightness } from './tone';
 
 /**
  * Moiré: two algorithmic gratings are overlaid like printed transparencies
@@ -73,6 +74,7 @@ export const moire: EffectDefinition = {
     { key: 'intensity', label: 'Intensity', type: 'range', group: 'Tone', min: 0, max: 1, step: 0.01, default: 0.9 },
     { key: 'blend', label: 'Blend Mode', type: 'select', group: 'Tone', default: 'multiply', options: BLEND_OPTIONS },
     { key: 'invert', label: 'Invert Pattern', type: 'toggle', group: 'Tone', default: false },
+    KEEP_BRIGHTNESS,
     { key: 'color1', label: 'Color 1', type: 'color', group: 'Color', default: '#101110' },
     { key: 'color2', label: 'Color 2', type: 'color', group: 'Color', default: '#f1efe6' },
     { key: 'opacity', label: 'Original Opacity', type: 'range', group: 'Color', min: 0, max: 1, step: 0.01, default: 1 },
@@ -164,6 +166,7 @@ export const moire: EffectDefinition = {
         op[i + 3] = 255;
       }
     }
+    if (params.keepBrightness) matchBrightness(out, src);
     ctx.putImageData(out, 0, 0);
   },
 };

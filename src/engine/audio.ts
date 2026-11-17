@@ -2,42 +2,126 @@ import type { AudioBands } from '../effects/types';
 import { ZERO_BANDS } from '../effects/types';
 
 /**
- * Turns an AnalyserNode into smoothed 0..1 band envelopes plus a beat pulse.
- * Envelopes use separate attack/release so hits feel punchy but don't flicker.
+ * How the sound is read: one shared set, used by the live preview and by
+ * export, so a video reacts exactly as the preview did. Kept in the browser
+ * between visits.
  */
-/** The shared band response. The live analyser and offline export both feed it, so they match. */
+export interface AudioTuning {
+  /** Overall sensitivity. */
+  gain: number;
+  /** Milliseconds for a level to rise, and to fall back. */
+  attack: number;
+  release: number;
+  /** Per-band trims. */
+  bassGain: number;
+  midGain: number;
+  trebleGain: number;
+  /** Crossovers, in Hz: bass below `bassHz`, highs above `trebleHz`. */
+  bassHz: number;
+  trebleHz: number;
+  /** 0..1: how easily a beat or a hit is detected. */
+  beatSense: number;
+  /** Shortest gap between two beats, ms. */
+  beatHold: number;
+}
+
+export const DEFAULT_TUNING: AudioTuning = { gain: 1, attack: 12, release: 220, bassGain: 1, midGain: 1, trebleGain: 1, bassHz: 160, trebleHz: 2200, beatSense: 0.5, beatHold: 200 };
+const TUNING_KEY = 'airfx.audio.tuning';
+
+function loadTuning(): AudioTuning {
+  try {
+    const s = JSON.parse(localStorage.getItem(TUNING_KEY) ?? 'null') as Partial<AudioTuning> | null;
+    if (s && typeof s === 'object') {
+      const out = { ...DEFAULT_TUNING };
+      for (const k of Object.keys(DEFAULT_TUNING) as (keyof AudioTuning)[]) if (typeof s[k] === 'number' && Number.isFinite(s[k])) out[k] = s[k] as number;
+      return out;
+    }
+  } catch { /* storage blocked: defaults */ }
+  return { ...DEFAULT_TUNING };
+}
+
+export const audioTuning = {
+  value: loadTuning(),
+  listeners: new Set<() => void>(),
+  set(patch: Partial<AudioTuning>) {
+    this.value = { ...this.value, ...patch };
+    try { localStorage.setItem(TUNING_KEY, JSON.stringify(this.value)); } catch { /* not saved, still used */ }
+    this.listeners.forEach((f) => f());
+  },
+  reset() { this.set({ ...DEFAULT_TUNING }); },
+  subscribe(f: () => void) { this.listeners.add(f); return () => { this.listeners.delete(f); }; },
+  get() { return this.value; },
+};
+
+/**
+ * Turns band levels into smooth 0..1 envelopes, a beat pulse and a hit
+ * (transient) pulse. Rises and falls use their own times (attack, release),
+ * so hits feel punchy but nothing flickers. The live analyser and offline
+ * export both feed it, so they match.
+ */
 export class Envelope {
   private env: AudioBands = { ...ZERO_BANDS };
   /** Slowly decaying per-band peaks used for automatic normalisation. */
   private peak = { bass: 1e-4, mid: 1e-4, treble: 1e-4, level: 1e-4 };
-  private bassAvg = 0;
+  /** Running mean and spread of the onset signals, for adaptive detection. */
+  private stat = { bass: { m: 0, v: 0.01 }, flux: { m: 0, v: 0.01 } };
+  private prevBass = 0;
   private lastBeatAt = -1;
-  /** Input gain (sensitivity). */
-  gain = 1;
-  /** 0 = raw, 1 = very smooth. */
-  smoothing = 0.35;
+  private lastHitAt = -1;
+  private hitSize = 0;
+  private beatSize = 0;
+  /** Set to use something other than the shared tuning (tests). */
+  tuning: AudioTuning | null = null;
 
-  /** Band levels (linear), the clock in seconds, and the step since the last call. */
-  push(bass: number, mid: number, treble: number, t: number, dt: number): AudioBands {
+  /** Band levels (linear), spectral flux (0..), the clock in seconds, and the step since the last call. */
+  push(bass: number, mid: number, treble: number, t: number, dt: number, flux = 0): AudioBands {
+    const tu = this.tuning ?? audioTuning.value;
     const raw = { bass, mid, treble, level: bass * 0.5 + mid * 0.35 + treble * 0.15 };
+    const trim = { bass: tu.bassGain, mid: tu.midGain, treble: tu.trebleGain, level: 1 };
     // Normalise each band to its recent peak (half-life ≈ 4 s) so quiet and
     // loud tracks both use the full 0..1 range; gain then scales the result.
     const decay = Math.pow(0.5, dt / 4);
-    const rel = Math.exp(-dt / (0.03 + this.smoothing * 0.4));
-    const att = Math.exp(-dt / (0.004 + this.smoothing * 0.04));
+    const att = Math.exp(-dt / Math.max(0.001, tu.attack / 1000));
+    const rel = Math.exp(-dt / Math.max(0.005, tu.release / 1000));
     for (const k of ['bass', 'mid', 'treble', 'level'] as const) {
       this.peak[k] = Math.max(raw[k], this.peak[k] * decay, 1e-5);
-      const v = Math.min(1, Math.pow(Math.min(1, raw[k] / this.peak[k]) * this.gain, 1.6));
+      const v = Math.min(1, Math.pow(Math.min(1, raw[k] / this.peak[k]) * tu.gain * trim[k], 1.6));
       const prev = this.env[k];
       this.env[k] = v > prev ? v + (prev - v) * att : v + (prev - v) * rel;
     }
-    // Beat: bass energy jumps clearly above its running average.
-    const b = raw.bass / this.peak.bass;
-    this.bassAvg = this.bassAvg * Math.pow(0.5, dt / 0.35) + b * (1 - Math.pow(0.5, dt / 0.35));
-    if (b > this.bassAvg * 1.25 + 0.05 && b > 0.35 / this.gain && t - this.lastBeatAt > 0.2) this.lastBeatAt = t;
-    this.env.beat = this.lastBeatAt < 0 ? 0 : Math.exp(-(t - this.lastBeatAt) / 0.16);
+
+    // Detection works on rises, compared with how much the signal usually
+    // moves (mean + k·spread), so a busy track does not fire constantly and a
+    // quiet one still fires. Sensitivity sets k.
+    const k = 2.6 - tu.beatSense * 2, follow = 1 - Math.exp(-dt / 1.2);
+    const update = (s: { m: number; v: number }, x: number) => { const d = x - s.m; s.m += d * follow; s.v += (d * d - s.v) * follow; };
+    const bn = raw.bass / this.peak.bass, rise = Math.max(0, bn - this.prevBass);
+    this.prevBass = bn;
+    const sb = this.stat.bass;
+    if (rise > sb.m + k * Math.sqrt(sb.v) && rise > 0.04 && bn > 0.3 && t - this.lastBeatAt > tu.beatHold / 1000) {
+      this.lastBeatAt = t;
+      this.beatSize = Math.min(1, 0.55 + rise * 2);
+    }
+    update(sb, rise);
+    const sf = this.stat.flux;
+    if (flux > sf.m + k * Math.sqrt(sf.v) && flux > 1e-4 && t - this.lastHitAt > 0.09) {
+      this.lastHitAt = t;
+      this.hitSize = Math.min(1, 0.5 + (flux - sf.m) / (4 * Math.sqrt(sf.v) + 1e-6));
+    }
+    update(sf, flux);
+    // Pulses fall with the release time, so they follow the same feel as the bands.
+    const fall = Math.max(0.06, tu.release / 1000 * 0.7);
+    this.env.beat = this.lastBeatAt < 0 || t < this.lastBeatAt ? 0 : this.beatSize * Math.exp(-(t - this.lastBeatAt) / fall);
+    this.env.hit = this.lastHitAt < 0 || t < this.lastHitAt ? 0 : this.hitSize * Math.exp(-(t - this.lastHitAt) / (fall * 0.6));
     return { ...this.env };
   }
+}
+
+/** Positive change in a spectrum since the last one (spectral flux), per bin on average. */
+export function spectralFlux(cur: Float32Array, prev: Float32Array, from = 1, to = cur.length) {
+  let s = 0;
+  for (let i = from; i < to; i++) { const d = cur[i] - prev[i]; if (d > 0) s += d; prev[i] = cur[i]; }
+  return s / Math.max(1, to - from);
 }
 
 /** One moment of sound, for effects that draw the signal itself. */
@@ -78,16 +162,16 @@ export class BandAnalyser {
   private envelope = new Envelope();
   private lastAt = 0;
   private cached: AudioBands = { ...ZERO_BANDS };
-  get gain() { return this.envelope.gain; }
-  set gain(v: number) { this.envelope.gain = v; }
-  get smoothing() { return this.envelope.smoothing; }
-  set smoothing(v: number) { this.envelope.smoothing = v; }
+  private mag: Float32Array;
+  private prevMag: Float32Array;
 
   constructor(private analyser: AnalyserNode) {
     analyser.fftSize = 2048;
     analyser.smoothingTimeConstant = 0.2;
     this.bins = new Float32Array(analyser.frequencyBinCount);
     this.spec = new Float32Array(analyser.frequencyBinCount);
+    this.mag = new Float32Array(analyser.frequencyBinCount);
+    this.prevMag = new Float32Array(analyser.frequencyBinCount);
     this.time = new Float32Array(analyser.fftSize);
   }
 
@@ -121,7 +205,11 @@ export class BandAnalyser {
     const dt = Math.min(0.1, this.lastAt ? (now - this.lastAt) / 1000 : 0.016);
     this.lastAt = now;
     this.analyser.getFloatFrequencyData(this.bins);
-    this.cached = this.envelope.push(this.bandAvg(25, 160), this.bandAvg(160, 2200), this.bandAvg(2200, 12000), now / 1000, dt);
+    const tu = audioTuning.value, lo = tu.bassHz, hi = Math.max(lo + 200, tu.trebleHz);
+    // Flux on a compressed (log-like) magnitude, the usual onset measure.
+    for (let i = 0; i < this.bins.length; i++) this.mag[i] = toUnit(this.bins[i]);
+    const flux = spectralFlux(this.mag, this.prevMag, 2, Math.min(this.mag.length, Math.ceil(12000 / (this.analyser.context.sampleRate / this.analyser.fftSize))));
+    this.cached = this.envelope.push(this.bandAvg(25, lo), this.bandAvg(lo, hi), this.bandAvg(hi, 12000), now / 1000, dt, flux);
     return this.cached;
   }
 }

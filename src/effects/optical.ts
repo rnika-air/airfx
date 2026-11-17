@@ -29,6 +29,22 @@ function end(ctx: CanvasRenderingContext2D) {
 }
 const rgba = ([r, g, b]: number[], a: number) => `rgba(${r | 0},${g | 0},${b | 0},${a})`;
 
+export const TRUE_HIGHLIGHTS: ParamDef = {
+  key: 'trueHighlights', label: 'Only True Highlights', type: 'toggle', group: 'Output', default: true,
+  hint: 'Raises the threshold to the picture’s own brightest tenth, so a white page or a bright sky does not glow all over.',
+};
+
+/** The threshold in use: never below the 90th percentile of the picture's brightness when True Highlights is on. */
+export function highlightLevel(src: ImageData, threshold: number, on: boolean) {
+  if (!on) return threshold;
+  const d = src.data, hist = new Uint32Array(64), step = Math.max(1, Math.floor(d.length / 4 / 6000)) * 4;
+  let n = 0;
+  for (let i = 0; i < d.length; i += step) { hist[Math.min(63, ((0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 4) | 0)]++; n++; }
+  let s = 0, p90 = 1;
+  for (let v = 0; v < 64; v++) { s += hist[v]; if (s >= n * 0.9) { p90 = (v + 1) / 64; break; } }
+  return Math.max(threshold, Math.min(0.96, p90));
+}
+
 /** Bright-pass of the image, blurred, on a canvas at `scale` of the frame. */
 function brightPass(src: ImageData, scale: number, threshold: number, radius: number, hStretch = 1): HTMLCanvasElement {
   const sw = src.width, w = Math.max(2, Math.round(sw * scale)), h = Math.max(2, Math.round(src.height * scale));
@@ -180,12 +196,13 @@ export const glowBloom: EffectDefinition = {
     { key: 'tintOn', label: 'Tint', type: 'toggle', group: 'Bloom', default: false },
     { key: 'color', label: 'Glow Color', type: 'color', group: 'Bloom', default: '#c6ff2e', visibleWhen: (v) => v.tintOn === true },
     ...output,
+    TRUE_HIGHLIGHTS,
   ],
   render({ src, srcCanvas, ctx, width, height, params: p, unit }) {
     begin(ctx, srcCanvas, p);
-    const scale = 0.25, rad = Math.max(1, (p.radius as number) * unit * scale);
-    const a = brightPass(src, scale, p.threshold as number, rad);
-    const b = (p.wide as number) > 0 ? brightPass(src, 0.125, p.threshold as number, rad * 1.5) : null;
+    const scale = 0.25, rad = Math.max(1, (p.radius as number) * unit * scale), thr = highlightLevel(src, p.threshold as number, p.trueHighlights as boolean);
+    const a = brightPass(src, scale, thr, rad);
+    const b = (p.wide as number) > 0 ? brightPass(src, 0.125, thr, rad * 1.5) : null;
     const base = (p.opacity as number);
     const paint = (cv: HTMLCanvasElement, k: number) => {
       for (let i = 0; i < Math.ceil(k); i++) {
@@ -220,11 +237,12 @@ export const anamorphic: EffectDefinition = {
     { key: 'intensity', label: 'Intensity', type: 'range', group: 'Streak', min: 0, max: 4, step: 0.01, default: 1.4 },
     { key: 'color', label: 'Color', type: 'color', group: 'Streak', default: '#4f8cff' },
     ...output,
+    TRUE_HIGHLIGHTS,
   ],
   render({ src, srcCanvas, ctx, width, height, params: p, unit }) {
     begin(ctx, srcCanvas, p);
     const scale = 0.25;
-    const cv = brightPass(src, scale, p.threshold as number, 1, Math.max(1, (p.length as number) * unit * scale));
+    const cv = brightPass(src, scale, highlightLevel(src, p.threshold as number, p.trueHighlights as boolean), 1, Math.max(1, (p.length as number) * unit * scale));
     // Tint: keep only the streak's shape, coloured.
     const g = get2d(cv);
     g.globalCompositeOperation = 'multiply';
@@ -253,7 +271,7 @@ export const chromaticAb: EffectDefinition = {
   description: 'Lens fringing: colour channels scale differently from an optical centre.',
   audioDefaults: { amount: { band: 'bass', amount: 0.3 } },
   params: [
-    { key: 'amount', label: 'Chromatic Separation', type: 'range', group: 'Lens', min: -40, max: 40, step: 0.25, default: 10 },
+    { key: 'amount', label: 'Chromatic Separation', type: 'range', group: 'Lens', min: -40, max: 40, step: 0.25, default: 4 },
     { key: 'cx', label: 'Center X', type: 'range', group: 'Lens', min: 0, max: 1, step: 0.005, default: 0.5 },
     { key: 'cy', label: 'Center Y', type: 'range', group: 'Lens', min: 0, max: 1, step: 0.005, default: 0.5 },
     { key: 'falloff', label: 'Edge Falloff', type: 'range', group: 'Lens', min: 0.2, max: 4, step: 0.01, default: 1.6 },
@@ -297,11 +315,12 @@ export const lightRays: EffectDefinition = {
     { key: 'color', label: 'Color', type: 'color', group: 'Rays', default: '#ffe7bf' },
     { key: 'shimmer', label: 'Shimmer', type: 'range', group: 'Rays', min: 0, max: 1, step: 0.01, default: 0.2 },
     ...output,
+    TRUE_HIGHLIGHTS,
   ],
   render({ src, srcCanvas, ctx, width, height, params: p, time }) {
     begin(ctx, srcCanvas, p);
     const scale = 0.25, w = Math.round(width * scale), h = Math.round(height * scale);
-    const d = src.data, plane = new Float32Array(w * h), thr = p.threshold as number;
+    const d = src.data, plane = new Float32Array(w * h), thr = highlightLevel(src, p.threshold as number, p.trueHighlights as boolean);
     for (let y = 0; y < h; y++)
       for (let x = 0; x < w; x++) {
         const i = (Math.floor(y / scale) * width + Math.floor(x / scale)) * 4;

@@ -32,7 +32,8 @@ import { useEffectRenderer } from './hooks/useEffectRenderer';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAudio } from './hooks/useAudio';
 import { useTransport } from './hooks/useTransport';
-import type { ModMap } from './effects/types';
+import { suggestedLinks } from './engine/audioMap';
+import { useMediaAnalysis } from './analysis/useAnalysis';
 import { StackPanel } from './components/StackPanel';
 import { PresetPanel } from './components/PresetPanel';
 import type { CanvasTool } from './components/Workspaces';
@@ -76,6 +77,7 @@ export default function App() {
   const originalRef = useRef<HTMLCanvasElement>(null);
 
   const { media: fileMedia, loading, error, setError, load, clear } = useMedia();
+  const analysis = useMediaAnalysis(fileMedia);
   const [mode, setMode] = useState<AppMode>('effects');
   useSyncExternalStore(camera.subscribe, camera.getVersion);
   const inLive = mode === 'live';
@@ -205,12 +207,7 @@ export default function App() {
   const autoMap = useCallback(() => {
     const eff = fx.effect;
     if (!eff) return;
-    let defaults: ModMap | undefined = eff.audioDefaults;
-    if (!defaults) {
-      const ranges = eff.params.filter((p) => p.type === 'range').slice(0, 2);
-      defaults = Object.fromEntries(ranges.map((p, i) => [p.key, { band: i === 0 ? 'bass' : 'level', amount: i === 0 ? 0.3 : 0.2 }])) as ModMap;
-    }
-    fx.setMods({ ...(fx.mods ?? {}), ...defaults });
+    fx.setMods({ ...(fx.mods ?? {}), ...suggestedLinks(eff) });
   }, [fx]);
 
   const clearMods = useCallback(() => fx.setMods({}), [fx]);
@@ -597,6 +594,7 @@ export default function App() {
           params={fx.params}
           mods={effectMods}
           hasMedia={!!media}
+          analysis={inLive ? null : analysis}
           onChange={fx.setParam}
           onParams={fx.setParams}
           onMod={fx.setMod}

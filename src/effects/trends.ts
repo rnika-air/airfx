@@ -83,7 +83,7 @@ export const iridescentFilm: EffectDefinition = {
     R('ripple', 'Surface Ripple', 0, 1, 0.01, 0.35),
     R('scale', 'Ripple Size', 20, 600, 5, 220),
     R('flow', 'Flow', 0, 2, 0.01, 0),
-    R('amount', 'Amount', 0, 1, 0.01, 0.5),
+    R('amount', 'Amount', 0, 1, 0.01, 0.32),
     S('blendMode', 'Apply As', 'screen', [['screen', 'Light Film'], ['replace', 'Replace Image'], ['tone', 'Keep Shading']]),
     SEED(),
   ],

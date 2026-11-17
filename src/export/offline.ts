@@ -4,7 +4,7 @@ import {
 } from 'mediabunny';
 import type { AudioBands, StackItem } from '../effects/types';
 import { audioBus, SILENCE, type AudioFrame } from '../engine/audio';
-import { Envelope } from '../engine/audio';
+import { Envelope, audioTuning, spectralFlux } from '../engine/audio';
 import { renderClock } from '../engine/clock';
 import { FrameRenderer } from '../engine/FrameRenderer';
 import { layersOf } from '../hooks/useEffectState';
@@ -199,6 +199,7 @@ async function fitAudio(buffer: AudioBuffer, duration: number, loop: boolean) {
 /** Audio bands at a moment of a decoded song: the live analyser's response, computed offline. */
 export class OfflineBands {
   private env = new Envelope();
+  private prevSpec = new Float32Array(1024);
   private data: Float32Array;
   private rate: number;
   constructor(buffer: AudioBuffer) {
@@ -221,9 +222,12 @@ export class OfflineBands {
       for (let i = a; i <= b; i++) s += Math.hypot(re[i], im[i]) / N;
       return s / (b - a + 1);
     };
-    const bands = this.env.push(avg(25, 160), avg(160, 2200), avg(2200, 12000), t, dt);
     const spectrum = new Float32Array(N / 2), wave = new Float32Array(N);
     for (let i = 0; i < N / 2; i++) spectrum[i] = Math.min(1, Math.max(0, (20 * Math.log10(Math.hypot(re[i], im[i]) / N + 1e-9) + 90) / 70));
+    // The same crossovers and onset measure as the live analyser (shared tuning).
+    const tu = audioTuning.value, lo = tu.bassHz, hi = Math.max(lo + 200, tu.trebleHz);
+    const flux = spectralFlux(spectrum, this.prevSpec, 2, Math.min(N / 2, Math.ceil(12000 / (this.rate / N))));
+    const bands = this.env.push(avg(25, lo), avg(lo, hi), avg(hi, 12000), t, dt, flux);
     for (let i = 0; i < N; i++) { const j = end - N + i; wave[i] = j >= 0 && j < this.data.length ? this.data[j] : 0; }
     return { bands, spectrum, wave, binHz: this.rate / N };
   }

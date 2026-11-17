@@ -80,8 +80,33 @@ function finishBuild(): Plugin {
   };
 }
 
+/**
+ * Development only: the effect test bench (qa/index.html) saves its contact
+ * sheets and measurements to qa/out/ through this endpoint.
+ */
+function qaSave(): Plugin {
+  return {
+    name: 'airfx-qa-save',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/__qa/save', (req, res) => {
+        const name = basename(new URL(req.url ?? '', 'http://x').searchParams.get('name') ?? '');
+        if (req.method !== 'POST' || !/^[\w.-]+$/.test(name)) { res.statusCode = 400; res.end(); return; }
+        const parts: Buffer[] = [];
+        req.on('data', (c: Buffer) => parts.push(c));
+        req.on('end', () => {
+          const dir = join(server.config.root, 'qa', 'out');
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(join(dir, name), Buffer.concat(parts));
+          res.end('ok');
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [serveOrt(), react(), finishBuild()],
+  plugins: [serveOrt(), react(), finishBuild(), qaSave()],
   define: { __APP_VERSION__: JSON.stringify(pkg.version), __ORT_BASE__: JSON.stringify(ORT_BASE) },
   server: {
     port: 5173,

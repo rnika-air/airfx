@@ -222,11 +222,11 @@ export const glyphArray: EffectDefinition = withContent({
     { key: 'coverage', label: 'Coverage', type: 'range', group: 'Array', min: 0, max: 1, step: 0.01, default: 0.85 },
     { key: 'seed', label: 'Seed', type: 'seed', group: 'Array', default: 22 },
     {
-      key: 'select', label: 'Apply To', type: 'select', group: 'Selection', default: 'color',
-      options: [{ value: 'all', label: 'Everything' }, { value: 'color', label: 'Target Color' }, { value: 'dark', label: 'Shadows' }, { value: 'light', label: 'Highlights' }, { value: 'edges', label: 'Edges' }],
+      key: 'select', label: 'Apply To', type: 'select', group: 'Selection', default: 'vivid',
+      options: [{ value: 'all', label: 'Everything' }, { value: 'vivid', label: 'Most Vivid Color (Auto)' }, { value: 'color', label: 'Target Color' }, { value: 'dark', label: 'Shadows' }, { value: 'light', label: 'Highlights' }, { value: 'edges', label: 'Edges' }],
     },
     { key: 'target', label: 'Target Color', type: 'color', group: 'Selection', default: '#d6246e', visibleWhen: (v) => v.select === 'color' },
-    { key: 'tolerance', label: 'Tolerance', type: 'range', group: 'Selection', min: 2, max: 180, step: 1, default: 45, unit: '°', visibleWhen: (v) => v.select === 'color' },
+    { key: 'tolerance', label: 'Tolerance', type: 'range', group: 'Selection', min: 2, max: 180, step: 1, default: 45, unit: '°', visibleWhen: (v) => v.select === 'color' || v.select === 'vivid' },
     { key: 'threshold', label: 'Threshold', type: 'range', group: 'Selection', min: 0, max: 1, step: 0.01, default: 0.45, visibleWhen: (v) => v.select !== 'all' && v.select !== 'color' },
     {
       key: 'colorMode', label: 'Tile Color', type: 'select', group: 'Color', default: 'palette',
@@ -243,8 +243,18 @@ export const glyphArray: EffectDefinition = withContent({
     const { data, cols, rows } = cellAverages(srcCanvas, width, height, cell);
     const names = [...((p.glyphs as string) || 'x')].filter((c) => GLYPHS[c]);
     if (!names.length) names.push('x');
-    const sel = p.select as string, thr = p.threshold as number, tol = p.tolerance as number, cov = p.coverage as number;
-    const tgt = hexToRgb(p.target as string), [th] = rgbToHsl(tgt[0] / 255, tgt[1] / 255, tgt[2] / 255);
+    let sel = p.select as string;
+    const thr = p.threshold as number, tol = p.tolerance as number, cov = p.coverage as number;
+    const tgt = hexToRgb(p.target as string);
+    let [th] = rgbToHsl(tgt[0] / 255, tgt[1] / 255, tgt[2] / 255);
+    if (sel === 'vivid') {
+      // The picture's own strongest colour: hues weighted by how saturated they are.
+      const bins = new Float32Array(36);
+      for (let i = 0; i < data.length; i += 4) { const [h, s, l] = rgbToHsl(data[i] / 255, data[i + 1] / 255, data[i + 2] / 255); if (s > 0.25 && l > 0.12 && l < 0.92) bins[Math.floor(h / 10) % 36] += s * s; }
+      let best = 0;
+      for (let b = 1; b < 36; b++) if (bins[b] > bins[best]) best = b;
+      if (bins[best] > cols * rows * 0.004) { th = best * 10 + 5; sel = 'color'; } else sel = 'edges'; // a colourless picture: follow its edges
+    }
     const step = Math.floor(time * (p.rate as number)), seed = p.seed as number;
     const source = p.colorMode === 'source', tileMix = p.tileMix as number;
     const lumAt = (c: number, r: number) => {
@@ -302,8 +312,8 @@ export const patternMerge: EffectDefinition = {
   audioDefaults: { threshold: { band: 'bass', amount: -0.15 } },
   params: [
     { key: 'cell', label: 'Pixel Size', type: 'range', group: 'Outline', min: 2, max: 40, step: 0.5, default: 9 },
-    { key: 'threshold', label: 'Edge Threshold', type: 'range', group: 'Outline', min: 0.01, max: 0.6, step: 0.005, default: 0.12 },
-    { key: 'width', label: 'Outline Width', type: 'range', group: 'Outline', min: 1, max: 4, step: 1, default: 2 },
+    { key: 'threshold', label: 'Edge Threshold', type: 'range', group: 'Outline', min: 0.01, max: 0.6, step: 0.005, default: 0.16 },
+    { key: 'width', label: 'Outline Width', type: 'range', group: 'Outline', min: 1, max: 4, step: 1, default: 1 },
     { key: 'color', label: 'Outline Color', type: 'color', group: 'Outline', default: '#ff1fb0' },
     {
       key: 'fill', label: 'Inner Pattern', type: 'select', group: 'Pattern', default: 'none',
@@ -425,9 +435,9 @@ export const pixelCrusher: EffectDefinition = {
   params: [
     { key: 'pixelW', label: 'Pixel Width', type: 'range', group: 'Crush', min: 1, max: 80, step: 0.5, default: 10 },
     { key: 'pixelH', label: 'Pixel Height', type: 'range', group: 'Crush', min: 1, max: 40, step: 0.5, default: 3 },
-    { key: 'bits', label: 'Levels per Channel', type: 'range', group: 'Crush', min: 2, max: 8, step: 1, default: 2 },
+    { key: 'bits', label: 'Levels per Channel', type: 'range', group: 'Crush', min: 2, max: 8, step: 1, default: 3 },
     { key: 'boost', label: 'Color Boost', type: 'range', group: 'Crush', min: 0, max: 3, step: 0.01, default: 1.6 },
-    { key: 'threshold', label: 'Black Threshold', type: 'range', group: 'Crush', min: 0, max: 1, step: 0.01, default: 0.22 },
+    { key: 'threshold', label: 'Black Threshold', type: 'range', group: 'Crush', min: 0, max: 1, step: 0.01, default: 0.12 },
     { key: 'smear', label: 'Row Smear', type: 'range', group: 'Glitch', min: 0, max: 1, step: 0.01, default: 0.35 },
     { key: 'rowShift', label: 'Row Shift', type: 'range', group: 'Glitch', min: 0, max: 200, step: 1, default: 30 },
     { key: 'scanlines', label: 'Scanlines', type: 'range', group: 'Glitch', min: 0, max: 1, step: 0.01, default: 0.4 },
@@ -480,7 +490,7 @@ export const shapeHalftone: EffectDefinition = withContent({
   params: [
     { key: 'shape', label: 'Shape', type: 'select', group: 'Screen', default: 'pill', options: Object.keys(SHAPES).map((s) => ({ value: s, label: s[0].toUpperCase() + s.slice(1) })) },
     { key: 'spacing', label: 'Grid Spacing', type: 'range', group: 'Screen', min: 4, max: 60, step: 0.5, default: 13 },
-    { key: 'scale', label: 'Shape Scale', type: 'range', group: 'Screen', min: 0.2, max: 1.5, step: 0.01, default: 0.72 },
+    { key: 'scale', label: 'Shape Scale', type: 'range', group: 'Screen', min: 0.2, max: 1.5, step: 0.01, default: 0.95 },
     { key: 'angle', label: 'Grid Angle', type: 'range', group: 'Screen', min: 0, max: 90, step: 1, default: 45, unit: '°' },
     { key: 'shapeAngle', label: 'Shape Rotation', type: 'range', group: 'Screen', min: 0, max: 180, step: 1, default: 45, unit: '°' },
     { key: 'curve', label: 'Tone Curve', type: 'custom', editor: 'curves', group: 'Tone', default: '' },

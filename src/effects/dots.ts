@@ -15,7 +15,7 @@ export const dots: EffectDefinition = withContent({
   audioDefaults: { scale: { band: 'bass', amount: 0.35 } },
   params: [
     { key: 'cell', label: 'Cell Size', type: 'range', group: 'Grid', min: 3, max: 80, step: 0.5, default: 12 },
-    { key: 'scale', label: 'Dot Scale', type: 'range', group: 'Grid', min: 0.1, max: 1.5, step: 0.01, default: 0.9 },
+    { key: 'scale', label: 'Dot Scale', type: 'range', group: 'Grid', min: 0.1, max: 1.5, step: 0.01, default: 1.05 },
     { key: 'hex', label: 'Offset Rows', type: 'toggle', group: 'Grid', default: false },
     {
       key: 'shape', label: 'Shape', type: 'select', group: 'Grid', default: 'circle',
@@ -71,7 +71,8 @@ export const dots: EffectDefinition = withContent({
         // On dark backgrounds bright areas get big dots, and vice versa.
         let t = bgDark ? lum : 1 - lum;
         if (invert) t = 1 - t;
-        const k = bySize ? minSize + (1 - minSize) * t : 1;
+        // Dot area, not width, follows tone, so the grid keeps the picture's brightness.
+        const k = bySize ? minSize + (1 - minSize) * Math.sqrt(Math.max(0, t)) : 1;
         const size = cell * scale * k;
         if (size < 0.4) continue;
         const x = c * cell + cell / 2 + off, y = r * cell + cell / 2;

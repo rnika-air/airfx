@@ -1,5 +1,8 @@
 import type { EffectDefinition } from './types';
 import { cellAverages, createCanvas, get2d, hash2, hexToRgb, type RGB } from '../utils/imageProcessing';
+import { STEADY, Steady } from './tone';
+
+const steadyLab = new Steady();
 
 /** Error-diffusion kernels: [dx, dy, weight], with a divisor. */
 const KERNELS: Record<string, { div: number; k: [number, number, number][] }> = {
@@ -118,8 +121,9 @@ export const ditherLab: EffectDefinition = {
     { key: 'brightness', label: 'Brightness', type: 'range', group: 'Tone', min: -0.6, max: 0.6, step: 0.01, default: 0 },
     { key: 'gamma', label: 'Gamma', type: 'range', group: 'Tone', min: 0.3, max: 3, step: 0.01, default: 1 },
     { key: 'invert', label: 'Invert', type: 'toggle', group: 'Tone', default: false },
+    STEADY,
   ],
-  render({ srcCanvas, ctx, width, height, params: p, unit }) {
+  render({ srcCanvas, ctx, width, height, params: p, unit, time }) {
     const cell = Math.max(1, (p.cell as number) * unit);
     const { data, cols: w, rows: h } = cellAverages(srcCanvas, width, height, cell);
     const contrast = p.contrast as number, bright = p.brightness as number, gi = 1 / (p.gamma as number);
@@ -134,6 +138,7 @@ export const ditherLab: EffectDefinition = {
     // Working buffer in 0..255 float RGB.
     const buf = new Float32Array(w * h * 3);
     for (let i = 0, n = w * h; i < n; i++) for (let c = 0; c < 3; c++) buf[i * 3 + c] = toneLut[data[i * 4 + c]];
+    const before = p.steady ? Float32Array.from(buf, (v) => v / 255) : null;
 
     let pal: RGB[] | null = null;
     let rampA: RGB = [0, 0, 0], rampB: RGB = [255, 255, 255];
@@ -220,6 +225,7 @@ export const ditherLab: EffectDefinition = {
         }
     }
 
+    if (before) steadyLab.apply(`${w}x${h}|${JSON.stringify(p)}`, time, before, 3, out, 4);
     const small = createCanvas(w, h);
     get2d(small).putImageData(new ImageData(out, w, h), 0, 0);
     ctx.imageSmoothingEnabled = false;
