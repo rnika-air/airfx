@@ -4,17 +4,54 @@ import { defaultParams, type ParamValues } from '../effects/types';
 import { createCanvas, get2d } from '../utils/imageProcessing';
 
 /**
- * Previews for the intro, the log-in screen and the About page: the real
- * AirFx renderers run on the showcase photo (public/showcase/photo.jpg, or the
- * bundled CC0 sample if it is missing), so what
- * a visitor sees is exactly what the effect does. Rendered once, in the
- * background, one effect at a time, and shared by every screen.
+ * Media for the intro, the log-in screen and the About page.
+ *
+ * public/showcase/showcase.json lists the photos, videos and GIFs. The live
+ * showcase (LiveFx) plays them all; the still tiles below are made by running
+ * the real AirFx renderers on the photos, one effect at a time, in the
+ * background. Without the list, the bundled CC0 sample photo is used.
  */
 
-export interface Preview { id: string; name: string; url: string }
+export interface ShowcaseItem { type: 'photo' | 'video' | 'gif'; src: string; focus?: [number, number]; zoom?: number }
+export interface Preview { id: string; name: string; url: string; media: ShowcaseItem['type'] }
 
-/** Effects shown, in order, with settings that read well at a small size. */
-const SHOWCASE: { id: string; params?: ParamValues; frames?: number }[] = [
+const BASE = '/showcase/';
+const SAMPLE: ShowcaseItem = { type: 'photo', src: '/samples/portrait.jpg', focus: [0.5, 0.35] };
+
+/* ── The media list ── */
+
+let media: ShowcaseItem[] = [];
+let mediaStarted = false;
+const mediaListeners = new Set<() => void>();
+let mediaReady: Promise<ShowcaseItem[]> | null = null;
+
+function loadMedia() {
+  if (mediaReady) return mediaReady;
+  mediaStarted = true;
+  mediaReady = fetch(`${BASE}showcase.json`)
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then((j: { media?: ShowcaseItem[] }) => (j.media ?? [])
+      .filter((m) => m && (m.type === 'photo' || m.type === 'video' || m.type === 'gif') && typeof m.src === 'string')
+      .map((m) => ({ ...m, src: /^(\/|https?:)/.test(m.src) ? m.src : BASE + m.src })))
+    .catch(() => [] as ShowcaseItem[])
+    .then((list) => {
+      media = list.length ? list : [SAMPLE];
+      mediaListeners.forEach((f) => f());
+      return media;
+    });
+  return mediaReady;
+}
+
+export const showcase = {
+  load: () => { if (!mediaStarted) void loadMedia(); },
+  subscribe: (f: () => void) => { mediaListeners.add(f); return () => { mediaListeners.delete(f); }; },
+  get: () => media,
+};
+
+/* ── Still tiles ── */
+
+/** Effects shown on the photos, in order, with settings that read well at a small size. */
+const STILLS: { id: string; params?: ParamValues; frames?: number }[] = [
   { id: 'glitch2' },
   { id: 'moire' },
   { id: 'pixelArt' },
@@ -34,52 +71,41 @@ const done: Preview[] = [];
 const listeners = new Set<() => void>();
 let started = false;
 let snapshot: Preview[] = [];
-
 function emit() { snapshot = [...done]; listeners.forEach((f) => f()); }
 
-export const SHOWCASE_PHOTO = '/showcase/photo.jpg';
-export const SHOWCASE_VIDEO = '/showcase/video.mp4';
-export const SHOWCASE_GIF = '/showcase/animation.gif';
-const SAMPLE = '/samples/portrait.jpg';
-let original = SHOWCASE_PHOTO;
-
-async function load(url: string) {
+async function frame(item: ShowcaseItem): Promise<HTMLCanvasElement | null> {
   const img = new Image();
   img.decoding = 'async';
-  img.src = url;
-  await img.decode();
-  return img;
-}
-
-async function source(): Promise<HTMLCanvasElement> {
-  let img: HTMLImageElement;
-  try { img = await load(SHOWCASE_PHOTO); } catch { original = SAMPLE; img = await load(SAMPLE); }
-  // Cover-crop to 4:5, zoomed in on the subject (the showcase photo has them small, in the middle).
+  img.src = item.src;
+  try { await img.decode(); } catch { return null; }
+  // Cover-crop to 4:5 around the focus point.
   const c = createCanvas(W, H), g = get2d(c, true);
-  const zoom = original === SHOWCASE_PHOTO ? 1.35 : 1, fx = 0.48, fy = original === SHOWCASE_PHOTO ? 0.6 : 0.35;
-  const k = Math.max(W / img.naturalWidth, H / img.naturalHeight) * zoom;
+  const [fx, fy] = item.focus ?? [0.5, 0.5];
+  const k = Math.max(W / img.naturalWidth, H / img.naturalHeight) * (item.zoom ?? 1);
   const w = img.naturalWidth * k, h = img.naturalHeight * k;
-  const x = Math.min(0, Math.max(W - w, W / 2 - fx * w)), y = Math.min(0, Math.max(H - h, H / 2 - fy * h));
-  g.drawImage(img, x, y, w, h);
+  g.drawImage(img, Math.min(0, Math.max(W - w, W / 2 - fx * w)), Math.min(0, Math.max(H - h, H / 2 - fy * h)), w, h);
   return c;
 }
 
 async function run() {
   if (started) return;
   started = true;
-  let src: HTMLCanvasElement;
-  try { src = await source(); } catch { return; }
+  const photos = (await loadMedia()).filter((m) => m.type === 'photo');
+  const sources = (await Promise.all((photos.length ? photos : [SAMPLE]).map(frame))).filter((c): c is HTMLCanvasElement => !!c);
+  if (!sources.length) { const s = await frame(SAMPLE); if (s) sources.push(s); else return; }
   const renderer = new FrameRenderer();
-  for (const s of SHOWCASE) {
-    const e = getEffect(s.id);
+  for (let n = 0; n < STILLS.length; n++) {
+    const s = STILLS[n], e = getEffect(s.id);
     if (!e) continue;
     try {
+      // Each effect on the next photo, so every photo appears.
+      const src = sources[n % sources.length];
       const target = createCanvas(W, H);
       const layers = [{ effect: e, params: { ...defaultParams(e), ...s.params } }];
-      const n = s.frames ?? (e.compat === 'video' ? 12 : 1);
-      for (let f = 0; f < n; f++) renderer.render({ source: src, target, width: W, height: H, layers, time: 0.8 + f / 24, frame: f + 10 });
+      const count = s.frames ?? (e.compat === 'video' ? 12 : 1);
+      for (let f = 0; f < count; f++) renderer.render({ source: src, target, width: W, height: H, layers, time: 0.8 + f / 24, frame: f + 10 });
       const url = await new Promise<string>((r) => target.toBlob((b) => r(b ? URL.createObjectURL(b) : target.toDataURL()), 'image/jpeg', 0.86));
-      done.push({ id: e.id, name: e.name, url });
+      done.push({ id: e.id, name: e.name, url, media: 'photo' });
       emit();
     } catch { /* one effect failing never stops the rest */ }
     // Leave the main thread free between effects, so the page stays smooth.
@@ -92,6 +118,6 @@ export const previews = {
   start: () => { void run(); },
   subscribe: (f: () => void) => { listeners.add(f); return () => { listeners.delete(f); }; },
   get: () => snapshot,
-  /** The untouched photo, for a before/after. */
-  get original() { return original; },
+  /** An untouched photo, for the fallback before/after. */
+  get original() { return (media.find((m) => m.type === 'photo') ?? SAMPLE).src; },
 };

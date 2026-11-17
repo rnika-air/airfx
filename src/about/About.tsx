@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Wordmark } from '../components/Wordmark';
 import { LIBRARY } from '../effects/registry';
-import { previews, SHOWCASE_GIF } from '../intro/previews';
-import { LiveFx } from '../intro/LiveFx';
+import { previews } from '../intro/previews';
+import { LiveFx, TYPE_NAME } from '../intro/LiveFx';
 import { CONTACT, COPYRIGHT_YEAR, CREATOR } from './config';
 
 /**
@@ -85,7 +85,7 @@ export function About({ onClose }: { onClose: () => void }) {
           <p className="ab__kicker mono">(About AirFx)</p>
           <p className="ab__statement">An experimental visual playground for images, video, motion and sound.</p>
           <div className="ab__strip" aria-hidden>
-            <LiveFx src={SHOWCASE_GIF} kind="gif" className="ab__live" offset={4} caption={(name) => <figcaption className="mono">{name} · Live</figcaption>} />
+            <LiveFx className="ab__live" offset={4} caption={(s) => <figcaption className="mono">{TYPE_NAME[s.item.type]} · {s.effectName}</figcaption>} />
             {list.slice(0, 5).map((p) => <figure key={p.id}><img src={p.url} alt="" /><figcaption className="mono">{p.name}</figcaption></figure>)}
           </div>
         </div>

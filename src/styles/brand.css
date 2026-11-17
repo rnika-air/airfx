@@ -447,3 +447,9 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .livefx figcaption, .livefx .hero__cap, .livefx .hero__tag { z-index: 1; }
 .ab__strip .ab__live { aspect-ratio: 4 / 5; scroll-snap-align: start; }
 @media (prefers-reduced-motion: reduce) { .livefx__fx, .livefx__edge { animation: none; } }
+/* Which kind of media is on screen: Photo · Video · GIF */
+.hero__types { position: absolute; z-index: 1; top: 10px; right: 10px; display: flex; gap: 2px; padding: 2px; background: var(--bg); border: 1px solid var(--line-2); border-radius: 999px; font-size: 9px; }
+.hero__types span { padding: 3px 8px; border-radius: 999px; color: var(--text-3); transition: background 0.3s, color 0.3s; }
+.hero__types span.on { background: var(--accent); color: var(--accent-ink); }
+.livefx--wait { background: repeating-linear-gradient(-45deg, var(--bg-2) 0 8px, var(--bg-1) 8px 16px); }
+@media (max-width: 760px) { .hero__types { top: auto; bottom: 44px; right: 8px; } }

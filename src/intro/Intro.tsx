@@ -5,8 +5,8 @@ import { account, useAccount } from '../cloud/account';
 import { cloudEnabled, explain, requireAccount } from '../cloud/client';
 import { About } from '../about/About';
 import { CREATOR } from '../about/config';
-import { previews, SHOWCASE_GIF, SHOWCASE_VIDEO, type Preview } from './previews';
-import { LiveFx } from './LiveFx';
+import { previews, type Preview } from './previews';
+import { LiveFx, TYPE_NAME } from './LiveFx';
 
 /**
  * The way into AirFx: an intro screen, the log-in / sign-up screen that
@@ -46,44 +46,24 @@ function Tile({ p, i, className = '' }: { p?: Preview; i: number; className?: st
   );
 }
 
-/** The showcase video with effects running on it live. Falls back to the photo sweep. */
-function LiveHero({ list }: { list: Preview[] }) {
+/** Photos, videos and GIFs in turn, each with a different effect running live. */
+function LiveHero() {
   return (
     <LiveFx
-      src={SHOWCASE_VIDEO}
-      kind="video"
       className="hero"
-      fallback={<Hero list={list} />}
-      caption={(name, i, n) => (
+      caption={(s) => (
         <>
-          <div className="hero__cap mono"><span>{String(i + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}</span><strong>{name}</strong></div>
-          <span className="hero__tag mono">Live · Video</span>
+          <div className="hero__types mono" aria-label="Works on">
+            {(['photo', 'video', 'gif'] as const).map((t) => <span key={t} className={s.item.type === t ? 'on' : ''}>{TYPE_NAME[t]}</span>)}
+          </div>
+          <div className="hero__cap mono">
+            <span>{String(s.index + 1).padStart(2, '0')} / {String(s.count).padStart(2, '0')}</span>
+            <strong>{s.effectName}</strong>
+          </div>
+          <span className="hero__tag mono">Live · {TYPE_NAME[s.item.type]}</span>
         </>
       )}
     />
-  );
-}
-
-/** Before → after on the photo, sweeping through the effects one by one. */
-function Hero({ list }: { list: Preview[] }) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    if (list.length < 2) return;
-    const t = setInterval(() => setI((n) => (n + 1) % list.length), 2600);
-    return () => clearInterval(t);
-  }, [list.length]);
-  const p = list[i % Math.max(1, list.length)];
-  return (
-    <div className="hero" aria-label="Live effect preview">
-      <img className="hero__src" src={previews.original} alt="" draggable={false} />
-      {p && <img key={p.id} className="hero__fx" src={p.url} alt={`${p.name} applied to a portrait`} draggable={false} />}
-      {p && <span key={`e${p.id}`} className="hero__edge" />}
-      <div className="hero__cap mono">
-        <span>{p ? `${String((i % list.length) + 1).padStart(2, '0')} / ${String(list.length).padStart(2, '0')}` : 'Loading'}</span>
-        <strong>{p?.name ?? 'AirFx'}</strong>
-      </div>
-      <span className="hero__tag mono">Before / After · Real-time</span>
-    </div>
   );
 }
 
@@ -135,7 +115,7 @@ export function Splash({ onEnter, onAuth, onAbout }: { onEnter?: () => void; onA
         </section>
 
         <section className="sp__stage" aria-label="Effect previews">
-          <LiveHero list={list} />
+          <LiveHero />
           <div className="sp__tiles">
             {Array.from({ length: 6 }, (_, i) => <Tile key={i} p={list[i + 1]} i={i} />)}
           </div>
@@ -203,7 +183,7 @@ export function AuthScreen({ initial = 'login', onBack, backLabel = 'Back', onGu
       <main className="auth__main">
         <aside className="auth__art" aria-hidden>
           <div className="auth__mosaic">
-            <LiveFx src={SHOWCASE_GIF} kind="gif" className="tile" offset={2} fallback={<Tile p={list[4] ?? list[0]} i={4} />} caption={(name) => <figcaption className="mono"><span>GIF</span>{name}</figcaption>} />
+            <LiveFx className="tile" offset={2} every={3600} caption={(s) => <figcaption className="mono"><span>{TYPE_NAME[s.item.type]}</span>{s.effectName}</figcaption>} />
             {Array.from({ length: 3 }, (_, i) => <Tile key={i} p={list[i + 5] ?? list[i]} i={i + 5} />)}
           </div>
           <p className="auth__quote">Glitch it, melt it, print it, <em>make it move.</em></p>

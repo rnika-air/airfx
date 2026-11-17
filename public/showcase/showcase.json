@@ -1,0 +1,14 @@
+{
+  "about": "Media for the intro, log-in and About previews, shown in this order with a different AirFx effect each time. type: photo | video | gif. focus (photos only): the point to keep in frame, from 0 to 1 across and down.",
+  "media": [
+    { "type": "video", "src": "video-1.mp4" },
+    { "type": "photo", "src": "photo-1.jpg", "focus": [0.48, 0.6], "zoom": 1.35 },
+    { "type": "gif", "src": "gif-1.gif" },
+    { "type": "video", "src": "video-2.mp4" },
+    { "type": "photo", "src": "photo-2.jpg", "focus": [0.42, 0.62] },
+    { "type": "gif", "src": "gif-2.gif" },
+    { "type": "video", "src": "video-3.mp4" },
+    { "type": "photo", "src": "photo-3.jpg", "focus": [0.72, 0.55] },
+    { "type": "gif", "src": "gif-3.gif" }
+  ]
+}
