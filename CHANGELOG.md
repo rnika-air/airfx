@@ -11,7 +11,7 @@ Each release's section becomes its GitHub Release notes. Write changes under
 
 ### Logo
 - The logo is now the AirFx mark on its own, and it is a button: click it anywhere (editor, phone menu, About, log-in) to go back to the intro.
-- The browser tab shows the textured mark.
+- The browser tab shows the lime AirFx mark on its own, as big as the tab allows, with no background.
 - The installed app opens on black on every device, with launch screens for iPhone and iPad.
 
 
