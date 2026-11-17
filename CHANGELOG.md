@@ -4,6 +4,9 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+- The intro, log-in and About previews now rotate through real photos, videos and GIFs, each with a different AirFx effect running on it live, and a Photo / Video / GIF marker shows which kind is on screen.
+- Effect tiles use several photos.
+- The AirFx wordmark on the intro is flat again.
 
 ## v5.1.0 (2026-11-17)
 ### New look, made for phones
