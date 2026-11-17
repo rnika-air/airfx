@@ -4,6 +4,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+
+## v5.2.0 (2026-11-17)
 ### New effects
 - **Image Reactor**: turns any picture into an audio-reactive visual. Eight scenes (Infinite Tunnel, Kaleidoscope, Contour Echo, Flow Smear, Melt, Shatter, Breathe, Prism), symmetry, twist, tiles, glass-rib, fisheye and pinch lenses, trails that zoom and turn, palettes (Gold, Ice, Acid, Infrared, Ember, Mono, your own two colours), hue drift and vignette. You choose what follows what: by default bass bends the picture, mids reshape it, highs add fine detail and the beat zooms, flashes, shifts colour, shakes or inverts. With no sound playing it moves on its own, so you can see the look first.
 - **Reaction Diffusion**: grows living Turing patterns (maze, spots, leopard, coral, worms, holes, waves, or your own feed and kill rates) that follow the picture’s tones and, if you like, the direction of its edges. Shown as two inks, printed into the picture’s colours, as an embossed relief, or over the picture. A real chemical simulation on a fixed grid, grown by time, so an export grows exactly like the preview.
