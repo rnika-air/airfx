@@ -1,5 +1,6 @@
-import { useEffect, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
 import { Wordmark } from '../components/Wordmark';
+import { WORD_PATH } from '../components/logoPaths';
 import { LIBRARY } from '../effects/registry';
 import { account, useAccount } from '../cloud/account';
 import { cloudEnabled, explain, requireAccount } from '../cloud/client';
@@ -78,72 +79,73 @@ function Ticker() {
   );
 }
 
-/** A hand-drawn swash through the wordmark, drawn on as the page opens. */
-function Swash() {
+/** The logo for the intro: the textured mark from the artwork, with the word under its left foot. */
+function SplashLogo() {
   return (
-    <svg className="sp__swash" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden>
-      <path pathLength={1} d="M8 118c60-6 118-30 170-62 34-21 60-46 52-50-12-6-52 40-58 82-4 30 22 34 44 14 24-22 40-60 54-56 14 4-14 54 4 58 20 5 46-50 64-48 16 2-6 40 10 42 22 3 50-40 74-58 30-22 70-28 108-14 26 10 38 26 60 30" />
-    </svg>
+    <span className="sp__logo">
+      <img src="/brand/logo-texture.webp" alt="" width={898} height={455} draggable={false} />
+      <svg className="sp__logo-word" viewBox="411 2046 847 217" aria-hidden><path d={WORD_PATH} fillRule="evenodd" /></svg>
+    </span>
   );
 }
 
 export function Splash({ onEnter, onAuth, onAbout }: { onEnter?: () => void; onAuth: (m: AuthMode) => void; onAbout: () => void }) {
   const list = usePreviews();
   const [phase, setPhase] = useState<'intro' | 'ready'>(() => (reduced() ? 'ready' : 'intro'));
-  // The dot field ends the opening; this only guards against a page that never draws.
   useEffect(() => {
     if (phase !== 'intro') return;
-    const t = setTimeout(() => setPhase('ready'), 2600);
+    const t = setTimeout(() => setPhase('ready'), 1700);
     return () => clearTimeout(t);
   }, [phase]);
   const count = LIBRARY.filter((e) => e.category !== 'adjust').length;
-  const year = new Date().getFullYear();
+  // Focus Enter for keyboards, without scrolling the phone layout past the previews.
+  const enterRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { enterRef.current?.focus({ preventScroll: true }); }, []);
 
   return (
     <div className={`sp sp--${phase}`} role="dialog" aria-modal="true" aria-label="Welcome to AirFx">
-      <DotField intro={phase === 'intro'} onDone={() => setPhase('ready')} />
-      <header className="sp__bar">
-        <span className="sp__mark mono" aria-hidden>✳ AIRFX</span>
-        <span className="sp__badge mono">Visual Playground <em>©{year}</em></span>
-        <nav className="sp__nav">
-          {phase === 'intro' && <button className="pill pill--ink pill--sm" onClick={() => setPhase('ready')}>Skip Intro</button>}
-          <button className="pill pill--ink pill--sm" onClick={onAbout}>Info</button>
-          {cloudEnabled && <button className="pill pill--ink pill--sm sp__hide-sm" onClick={() => onAuth('login')}>Log In</button>}
+      <DotField />
+      <div className="sp__wipe" aria-hidden><span className="mono">Experimental Visual Playground</span></div>
+      <header className="brandbar">
+        <span className="brandbar__mark"><Wordmark /></span>
+        <span className="brandbar__mid mono">Images · Video · Motion · Sound</span>
+        <nav className="brandbar__nav">
+          {phase === 'intro' && <button className="pill pill--ghost" onClick={() => setPhase('ready')}>Skip Intro</button>}
+          <button className="pill" onClick={onAbout}>Info</button>
+          {cloudEnabled && <button className="pill sp__hide-sm" onClick={() => onAuth('login')}>Log In</button>}
         </nav>
       </header>
 
       <main className="sp__main">
-        <section className="sp__type">
-          <h1 className="sp__word"><span className="sr-only">AIRFX</span><Wordmark size="lg" /><Swash /></h1>
-          <p className="sp__kicker mono">(01) {count} effects · images · video · motion · sound</p>
-          <div className="sp__object">
-            <LiveHero />
-            <span className="sp__sticker mono" aria-hidden>Live<br />Render</span>
-          </div>
-        </section>
-
         <section className="sp__copy">
+          <p className="sp__kicker mono">(01) — {count} effects, one playground</p>
+          <h1 className="sp__word"><span className="sr-only">AirFx</span><SplashLogo /></h1>
+          <p className="sp__claim">Experimental Visual <em>Playground.</em></p>
           <p className="sp__lead">{INTRO_TEXT}</p>
           <div className="sp__cta">
-            {onEnter && <button className="pill pill--ink-solid pill--lg" onClick={onEnter} autoFocus>Enter AirFx <span aria-hidden>→</span></button>}
-            {cloudEnabled && <button className="pill pill--ink pill--lg" onClick={() => onAuth('signup')}>Create Account</button>}
-            {cloudEnabled && <button className="pill pill--ink pill--lg" onClick={() => onAuth('login')}>Log In</button>}
+            {onEnter && <button ref={enterRef} className="pill pill--lime pill--lg" onClick={onEnter}>Enter AirFx <span aria-hidden>→</span></button>}
+            {cloudEnabled && <button className="pill pill--lg" onClick={() => onAuth('signup')}>Create Account</button>}
+            {cloudEnabled && <button className="pill pill--lg pill--ghost" onClick={() => onAuth('login')}>Log In</button>}
+          </div>
+          <p className="sp__fine mono">{onEnter ? 'No account needed to start · ' : ''}Runs in your browser · Your files stay on your device</p>
+        </section>
+
+        <section className="sp__stage" aria-label="Effect previews">
+          <LiveHero />
+          <div className="sp__tiles">
+            {Array.from({ length: 6 }, (_, i) => <Tile key={i} p={list[i]} i={i} />)}
           </div>
         </section>
       </main>
 
       <footer className="sp__foot">
-        <div className="sp__tiles" aria-label="Effect previews">
-          {Array.from({ length: 6 }, (_, i) => <Tile key={i} p={list[i]} i={i} />)}
-        </div>
-        <div className="sp__base">
-          <p className="sp__fine mono">{onEnter ? 'No account needed to start · ' : ''}Runs in your browser · Your files stay on your device · Created by {CREATOR.name}, {CREATOR.from}</p>
-        </div>
         <Ticker />
+        <p className="sp__credit mono">Created by {CREATOR.name}, {CREATOR.from}</p>
       </footer>
     </div>
   );
 }
+
 
 /* ───────────── Log in / Sign up ───────────── */
 

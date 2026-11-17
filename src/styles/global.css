@@ -107,9 +107,10 @@ code { font: 11px var(--mono); color: var(--text); }
   overflow: visible;
   flex-shrink: 0;
 }
-.wordmark--sm { height: 26px; width: auto; }
-.wordmark--lg { height: clamp(84px, 11vw, 150px); width: auto; }
-.wordmark__pixel { fill: var(--accent); }
+.wordmark--sm { height: 26px; width: auto; aspect-ratio: 5094 / 1308; }
+.wordmark--lg { height: clamp(84px, 11vw, 150px); width: auto; aspect-ratio: 2632 / 1308; }
+.wordmark__mark { fill: var(--accent); }
+.wordmark__word { fill: currentColor; }
 
 /* ── Buttons & inputs ───────────────────────────────────────── */
 .btn {

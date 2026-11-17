@@ -4,8 +4,10 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
-### New opening screen
-- The intro is now a full lime page: halftone dots swell out of the dark and merge into it, then a giant AirFx wordmark arrives with a hand-drawn swash, the live effect preview lands over it like a cut-out, and a dark base bar carries the effect tiles and the scrolling effect list. The dots bulge around your pointer (or drift slowly on touch screens). Works on phones, tablets and desktop, and respects reduced motion.
+### New logo and opening screen
+- New AirFx logo: the swept A mark with the AirFx word, in lime on black, across the intro, log-in, About page, editor, phone menu, browser tab and app icons. The intro shows the textured version of the mark.
+- The intro keeps its familiar layout on black with lime highlights, and now has a halftone dot field that swells and lights up lime around your pointer (a slow drifting swell on touch screens).
+- Fixed: on phones, the row of effect previews at the top of the intro was squashed flat, and the page opened scrolled down past it.
 - New introduction: “A creative playground for experimental visuals, image manipulation, motion graphics and digital art. Explore new techniques, distort reality and create your own visual language.” On the intro and the About page. AirFx is no longer described as “AI-powered”.
 
 ### Previews with their own pictures
