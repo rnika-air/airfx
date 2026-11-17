@@ -70,6 +70,9 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           VITE_REQUIRE_ACCOUNT: ${{ vars.VITE_REQUIRE_ACCOUNT }}
+          VITE_CONTACT_EMAIL: ${{ vars.VITE_CONTACT_EMAIL }}
+          VITE_CONTACT_URL: ${{ vars.VITE_CONTACT_URL }}
+          VITE_CONTACT_LABEL: ${{ vars.VITE_CONTACT_LABEL }}
       - name: Release notes from CHANGELOG.md
         run: node scripts/release-notes.mjs "$TAG" > release-notes.md
       - name: Package the built site

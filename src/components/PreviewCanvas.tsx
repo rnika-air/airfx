@@ -92,6 +92,26 @@ export function PreviewCanvas(p: Props) {
     return () => el.removeEventListener('wheel', block);
   }, []);
 
+  // Two fingers on the preview zoom it (touch screens). One finger keeps its usual job.
+  const touches = useRef(new Map<number, [number, number]>());
+  const pinch = useRef<{ dist: number; scale: number } | null>(null);
+  const spread = () => { const [a, b] = [...touches.current.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+  const touchDown = (e: React.PointerEvent) => {
+    if (e.pointerType !== 'touch' || !p.media) return;
+    touches.current.set(e.pointerId, [e.clientX, e.clientY]);
+    if (touches.current.size === 2) { pinch.current = { dist: spread(), scale }; toolStroke.current = false; dragging.current = false; swallowClick.current = true; }
+  };
+  const touchMove = (e: React.PointerEvent) => {
+    if (!touches.current.has(e.pointerId)) return;
+    touches.current.set(e.pointerId, [e.clientX, e.clientY]);
+    const pc = pinch.current;
+    if (pc && touches.current.size === 2 && pc.dist > 10) p.onZoom(Math.min(8, Math.max(0.05, pc.scale * (spread() / pc.dist))));
+  };
+  const touchUp = (e: React.PointerEvent) => {
+    touches.current.delete(e.pointerId);
+    if (touches.current.size < 2) pinch.current = null;
+  };
+
   const norm = (e: React.PointerEvent) => {
     const r = e.currentTarget.getBoundingClientRect();
     return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height] as const;
@@ -157,7 +177,7 @@ export function PreviewCanvas(p: Props) {
         </div>
       </div>
 
-      <div className="stage" ref={stageRef} onWheel={onWheel} tabIndex={-1}>
+      <div className="stage" ref={stageRef} onWheel={onWheel} tabIndex={-1} onPointerDownCapture={touchDown} onPointerMoveCapture={touchMove} onPointerUpCapture={touchUp} onPointerCancelCapture={touchUp} onDoubleClick={() => p.media && p.onZoom(p.zoom === 'fit' ? 1 : 'fit')}>
         {p.monitorPanel}
         {!p.media && !p.loading && (
           <div className="empty">

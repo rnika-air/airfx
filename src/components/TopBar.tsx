@@ -23,6 +23,8 @@ interface Props {
   onExport: () => void;
   /** Model status and diagnostics. */
   onAi?: () => void;
+  /** About AirFx: info, creator, contact, legal. */
+  onAbout?: () => void;
   /** Project save / open menu. */
   projectMenu?: ReactNode;
 }
@@ -56,6 +58,7 @@ export function TopBar(p: Props) {
       </div>
 
       <div className="topbar__actions">
+        {p.onAbout && <button className="btn" onClick={p.onAbout} title="About AirFx, contact and legal">Info</button>}
         {p.onAi && <button className="btn" onClick={p.onAi} title="AI model status and diagnostics">AI</button>}
         <button className="btn" onClick={p.onImport} title="Import media (Ctrl/Cmd + O)">
           Import Media

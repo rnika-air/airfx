@@ -7,14 +7,16 @@ import { GestureStudio } from './gesture/GestureStudio';
 import { useComposition } from './timeline/useComposition';
 import { useProject } from './project/useProject';
 import { ProjectMenu, RestoreBanner } from './project/ProjectMenu';
-import { CloudDialog, WelcomeGate } from './cloud/ui';
+import { CloudDialog } from './cloud/ui';
+import { Intro, openAbout, openIntro } from './intro/Intro';
+import { MobileHeader, MobileLibrary, MobileMenu, MobileNav, Sheet, useCompact, type MTab, type SheetSize } from './mobile/Mobile';
 import { cloudEnabled } from './cloud/client';
 import { useAccount } from './cloud/account';
 import { cloudProjects } from './cloud/storage';
 import { UpdateNotice } from './pwa/install';
 import { useAssets } from './hooks/useAssets';
 import { EffectSidebar } from './components/EffectSidebar';
-import { PreviewCanvas, type CompareMode, type Zoom } from './components/PreviewCanvas';
+import { PREVIEW_QUALITY, PreviewCanvas, type CompareMode, type Zoom } from './components/PreviewCanvas';
 import { ParameterPanel } from './components/ParameterPanel';
 import { AudioPanel } from './components/AudioPanel';
 import { RightPanel, type RightTab } from './components/RightPanel';
@@ -110,6 +112,11 @@ export default function App() {
   /** A suggestion being tried: rendered last, not part of the stack until applied. */
   const [trial, setTrial] = useState<StackItem | null>(null);
   const compApi = useComposition();
+  // Phones and tablets get their own layout: preview on top, panels in a bottom sheet.
+  const phone = useCompact();
+  const [mtab, setMtab] = useState<MTab>('preview');
+  const [sheet, setSheet] = useState<SheetSize>('half');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const effectMods = fx.mods;
   // In Key / Depth, render the chain only as far as that workspace's step.
@@ -497,7 +504,7 @@ export default function App() {
           onOpenMedia={(f) => { if (mode === 'timeline' || mode === 'gesture') switchMode('effects'); handleFile(f); }}
         />
       )}
-      <WelcomeGate />
+      <Intro />
       <UpdateNotice />
     </>
   );
@@ -552,105 +559,82 @@ export default function App() {
     );
   }
 
-  return (
-    <div className="app">
-      {restoreBanner}{cloudLayer}
-      <MediaImporter ref={importer} onFile={handleFile} />
-      <TopBar
-        mode={mode}
-        onMode={switchMode}
-        projectName={projectName}
-        onProjectName={setProjectName}
-        canExport={!!fileMedia && !inLive && mode !== 'depthlab'}
-        canNew={!!fileMedia}
-        canUndo={fx.canUndo}
-        canRedo={fx.canRedo}
-        onImport={openImport}
-        onUndo={fx.undo}
-        onRedo={fx.redo}
-        onResetEffect={fx.resetEffect}
-        resetDisabled={!fx.effect}
-        onNewProject={() => setConfirmNew(true)}
-        onExport={openExport}
-        onAi={() => setAiOpen(true)}
-        projectMenu={projectMenu}
-      />
-      {aiOpen && <AiManager onClose={() => setAiOpen(false)} />}
-      {guideOpen && mode === 'depth' && <DepthGuide {...wsProps} onClose={() => setGuideOpen(false)} onImport={openImport} onExport={openExport} />}
-      {inLive ? <LivePanel processedRef={processedRef} setFrameSink={(f) => { frameSink.current = f; }} activeEffect={fx.effect?.id ?? null} onSelect={fx.select} onAdd={fx.add} picking={picking} onPick={() => setPicking((p) => !p)} /> : mode === 'depthlab' ? <DepthLab onOpenSample={async (id) => { await load(await loadSampleFile(id)); switchMode('depth'); }} /> : mode === 'key' ? <KeyPanel {...wsProps} /> : mode === 'depth' ? <DepthPanel {...wsProps} /> : mode === 'cleanup' ? <CleanupPanel {...wsProps} /> : (
-        <EffectSidebar activeId={fx.effect?.id ?? null} onSelect={fx.select} onAdd={fx.add} onWorkspace={switchMode} />
-      )}
-      {mode !== 'depthlab' && <PreviewCanvas
-        media={media}
-        loading={loading}
-        error={error}
-        onDismissError={() => setError(null)}
-        processedRef={processedRef}
-        originalRef={originalRef}
-        compare={compare}
-        onCompare={setCompare}
-        zoom={zoom}
-        onZoom={setZoom}
-        previewEdge={previewEdge}
-        onPreviewEdge={setPreviewEdge}
-        quality={quality}
-        onQuality={setQuality}
-        monitor={monitor}
-        onMonitor={() => setMonitor((m) => !m)}
-        onImport={openImport}
-        onFile={handleFile}
-        onStageClick={inLive ? () => undefined : transport.toggle}
-        onCanvasPointer={onCanvasPointer}
-        toolActive={tool.kind !== 'none' || picking}
-        monitorPanel={monitor ? <PerfMonitor onClose={() => setMonitor(false)} /> : null}
-        overlay={<SelectionOverlay active={showSelection && !!media} getTime={getTime} box={dragBox} cleanMask={mode === 'cleanup'} tick={paintTick} toolOn={tool.kind !== 'none' && tool.kind !== 'clone'} />}
-      />}
-      {mode !== 'depthlab' && <RightPanel tab={tab} onTab={setTab} audioActive={!!audio.kind} linkCount={linkCount} adjusted={fx.adjust.enabled && !adjustIsNeutral(fx.adjust.params)}>
-        {tab === 'params' ? (
-          <>
-            {(mode === 'effects' || inLive) && <StackPanel fx={fx} bypass={bypass} onBypass={setBypass} />}
-            <ParameterPanel
-              effect={fx.effect}
-              item={fx.selected}
-              params={fx.params}
-              mods={effectMods}
-              hasMedia={!!media}
-              onChange={fx.setParam}
-              onParams={fx.setParams}
-              onMod={fx.setMod}
-              onItem={(patch) => fx.selected && fx.updateItem(fx.selected.id, patch, 'item')}
-              onReset={fx.resetEffect}
-            />
-          </>
-        ) : tab === 'adjust' ? (
-          <AdjustPanel fx={fx} />
-        ) : tab === 'presets' ? (
-          <PresetPanel fx={fx} />
-        ) : tab === 'scene' ? (
-          <ScenePanel media={media} fx={fx} trial={trial} setTrial={setTrial} getTime={transport.getTime} />
-        ) : (
-          <AudioPanel
-            reactor={reactor}
-            audio={audio}
-            effect={fx.effect}
-            mods={effectMods}
-            onMod={fx.setMod}
-            onAutoMap={autoMap}
-            onClearMods={clearMods}
-          />
-        )}
-      </RightPanel>}
-      <BottomStatusBar
-        media={media}
-        effect={fx.effect}
-        stats={stats}
-        transport={inLive ? { ...transport.state, visible: false } : transport.state}
+  const previewEl = (
+    <PreviewCanvas
+      media={media}
+      loading={loading}
+      error={error}
+      onDismissError={() => setError(null)}
+      processedRef={processedRef}
+      originalRef={originalRef}
+      compare={compare}
+      onCompare={setCompare}
+      zoom={zoom}
+      onZoom={setZoom}
+      previewEdge={previewEdge}
+      onPreviewEdge={setPreviewEdge}
+      quality={quality}
+      onQuality={setQuality}
+      monitor={monitor}
+      onMonitor={() => setMonitor((m) => !m)}
+      onImport={openImport}
+      onFile={handleFile}
+      onStageClick={inLive ? () => undefined : transport.toggle}
+      onCanvasPointer={onCanvasPointer}
+      toolActive={tool.kind !== 'none' || picking}
+      monitorPanel={monitor ? <PerfMonitor onClose={() => setMonitor(false)} /> : null}
+      overlay={<SelectionOverlay active={showSelection && !!media} getTime={getTime} box={dragBox} cleanMask={mode === 'cleanup'} tick={paintTick} toolOn={tool.kind !== 'none' && tool.kind !== 'clone'} />}
+    />
+  );
+  /** The right-hand panel's tabs. On phones the stack has its own Layers tab. */
+  const panelBody = (withStack: boolean) =>
+    tab === 'params' ? (
+      <>
+        {withStack && (mode === 'effects' || inLive) && <StackPanel fx={fx} bypass={bypass} onBypass={setBypass} />}
+        <ParameterPanel
+          effect={fx.effect}
+          item={fx.selected}
+          params={fx.params}
+          mods={effectMods}
+          hasMedia={!!media}
+          onChange={fx.setParam}
+          onParams={fx.setParams}
+          onMod={fx.setMod}
+          onItem={(patch) => fx.selected && fx.updateItem(fx.selected.id, patch, 'item')}
+          onReset={fx.resetEffect}
+        />
+      </>
+    ) : tab === 'adjust' ? (
+      <AdjustPanel fx={fx} />
+    ) : tab === 'presets' ? (
+      <PresetPanel fx={fx} />
+    ) : tab === 'scene' ? (
+      <ScenePanel media={media} fx={fx} trial={trial} setTrial={setTrial} getTime={transport.getTime} />
+    ) : (
+      <AudioPanel
+        reactor={reactor}
         audio={audio}
-        onTogglePlay={transport.toggle}
-        onSeek={transport.seek}
-        onToggleMute={transport.toggleMute}
+        effect={fx.effect}
+        mods={effectMods}
+        onMod={fx.setMod}
+        onAutoMap={autoMap}
+        onClearMods={clearMods}
       />
-
+    );
+  const statusBar = (
+    <BottomStatusBar
+      media={media}
+      effect={fx.effect}
+      stats={stats}
+      transport={inLive ? { ...transport.state, visible: false } : transport.state}
+      audio={audio}
+      onTogglePlay={transport.toggle}
+      onSeek={transport.seek}
+      onToggleMute={transport.toggleMute}
+    />
+  );
+  const dialogs = (
+    <>
       {exportOpen && fileMedia && (
         <ExportDialog
           media={fileMedia}
@@ -673,6 +657,134 @@ export default function App() {
           onCancel={() => setConfirmNew(false)}
         />
       )}
+    </>
+  );
+  const canExport = !!fileMedia && !inLive && mode !== 'depthlab';
+
+  if (phone) {
+    const openTab = (t: MTab) => {
+      if (t === mtab && t !== 'preview') { setMtab('preview'); return; }
+      if (t !== 'preview' && mtab === 'preview') setSheet('half');
+      setMtab(t);
+    };
+    const toPreview = () => setMtab('preview');
+    const workspaceTool = mode === 'key' || mode === 'depth' || mode === 'cleanup' || inLive;
+    const ADJUST_TABS: [RightTab, string][] = [['params', 'Effect'], ['adjust', 'Color'], ['presets', 'Presets'], ['audio', 'Audio'], ['scene', 'Scene']];
+    const sheetBody =
+      mtab === 'effects' ? (
+        inLive ? <LivePanel processedRef={processedRef} setFrameSink={(f) => { frameSink.current = f; }} activeEffect={fx.effect?.id ?? null} onSelect={fx.select} onAdd={fx.add} picking={picking} onPick={() => setPicking((p) => !p)} />
+        : mode === 'key' ? <KeyPanel {...wsProps} />
+        : mode === 'depth' ? <DepthPanel {...wsProps} />
+        : mode === 'cleanup' ? <CleanupPanel {...wsProps} />
+        : <MobileLibrary activeId={fx.effect?.id ?? null} onPick={(id) => { fx.select(id); setTab('params'); setMtab('adjust'); }} onAdd={(id) => { fx.add(id); setTab('params'); setMtab('adjust'); }} />
+      ) : mtab === 'adjust' ? (
+        <div className="madjust">
+          <div className="mseg" role="tablist">
+            {ADJUST_TABS.map(([id, label]) => (
+              <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
+                {label}{id === 'adjust' && fx.adjust.enabled && !adjustIsNeutral(fx.adjust.params) && <i className="tab__dot" />}{id === 'audio' && linkCount > 0 && <i className="tab__count">{linkCount}</i>}
+              </button>
+            ))}
+          </div>
+          {tab === 'params' && !fx.effect
+            ? <div className="mempty"><p>No effect selected yet.</p><button className="pill pill--lime" onClick={() => setMtab('effects')}>Browse Effects</button></div>
+            : panelBody(false)}
+        </div>
+      ) : mtab === 'layers' ? (
+        <div className="mlayers">
+          <StackPanel fx={fx} bypass={bypass} onBypass={setBypass} />
+          <button className="pill pill--block" onClick={() => setMtab('effects')}>+ Add An Effect Layer</button>
+          <p className="muted small">Layers render from top to bottom. Tap a layer to edit it in Adjust; use the arrows to reorder.</p>
+        </div>
+      ) : mtab === 'export' ? (
+        <div className="mexport">
+          <label className="field"><span className="mono">Project Name</span><input value={projectName} onChange={(e) => setProjectName(e.target.value)} spellCheck={false} /></label>
+          <button className="pill pill--lime pill--lg pill--block" onClick={openExport} disabled={!canExport}>{fileMedia?.kind === 'video' ? 'Render & Export Video' : 'Export Image'} <span aria-hidden>↗</span></button>
+          {!fileMedia && <p className="muted small">Import a picture or video first.</p>}
+          <div className="mexport__row">
+            <button className="pill pill--block" onClick={openImport}>Import Media</button>
+            <button className="pill pill--block" onClick={() => setConfirmNew(true)} disabled={!fileMedia}>New Project</button>
+          </div>
+          <div className="mexport__proj"><span className="mono">Save &amp; Open</span>{projectMenu}</div>
+          <fieldset className="mexport__set">
+            <legend className="mono">Preview</legend>
+            <label className="field"><span className="mono">Resolution</span>
+              <select value={previewEdge} onChange={(e) => setPreviewEdge(Number(e.target.value))}>{PREVIEW_QUALITY.map((q) => <option key={q.value} value={q.value}>{q.label} · {q.value}px</option>)}</select>
+            </label>
+            <label className="field"><span className="mono">Priority</span>
+              <select value={quality} onChange={(e) => setQuality(e.target.value as typeof quality)}><option value="performance">Performance</option><option value="balanced">Balanced</option><option value="quality">Quality</option></select>
+            </label>
+            <p className="muted small">Exports always render at full quality, whatever the preview uses.</p>
+          </fieldset>
+        </div>
+      ) : null;
+    const titles: Record<MTab, string> = { preview: '', effects: workspaceTool ? (inLive ? 'Live' : `AirFx ${mode[0].toUpperCase()}${mode.slice(1)}`) : 'Effects', adjust: fx.effect?.name ?? 'Adjust', layers: 'Layers', export: 'Export' };
+    return (
+      <div className={`app app--phone ${mtab !== 'preview' ? `app--sheet-${sheet}` : ''}`}>
+        {restoreBanner}{cloudLayer}
+        <MediaImporter ref={importer} onFile={handleFile} />
+        <MobileHeader mode={mode} canUndo={fx.canUndo} canRedo={fx.canRedo} onUndo={fx.undo} onRedo={fx.redo} onMenu={() => setMenuOpen(true)} />
+        {menuOpen && <MobileMenu mode={mode} onMode={(m) => { switchMode(m); setMtab(m === 'key' || m === 'depth' || m === 'cleanup' || m === 'live' ? 'effects' : 'preview'); }} onClose={() => setMenuOpen(false)} onAbout={openAbout} onAi={() => setAiOpen(true)} onIntro={openIntro} />}
+        {aiOpen && <AiManager onClose={() => setAiOpen(false)} />}
+        <div className="mstage">{mode === 'depthlab' ? <DepthLab onOpenSample={async (id) => { await load(await loadSampleFile(id)); switchMode('depth'); }} /> : previewEl}</div>
+        {statusBar}
+        {mtab !== 'preview' && sheetBody && (
+          <Sheet
+            title={titles[mtab]}
+            size={sheet}
+            onSize={setSheet}
+            onClose={toPreview}
+            actions={mtab === 'adjust' || mtab === 'layers'
+              ? <>
+                  {mtab === 'adjust' && fx.effect && <button className="pill pill--sm" onClick={fx.resetEffect}>Reset</button>}
+                  <button className="pill pill--sm pill--lime" onClick={toPreview}>Apply</button>
+                </>
+              : <button className="pill pill--sm" onClick={toPreview}>Close</button>}
+          >
+            {sheetBody}
+          </Sheet>
+        )}
+        <MobileNav tab={mtab} onTab={openTab} layers={fx.items.length} effectsLabel={workspaceTool ? 'Tools' : undefined} />
+        {dialogs}
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      {restoreBanner}{cloudLayer}
+      <MediaImporter ref={importer} onFile={handleFile} />
+      <TopBar
+        mode={mode}
+        onMode={switchMode}
+        projectName={projectName}
+        onProjectName={setProjectName}
+        canExport={canExport}
+        canNew={!!fileMedia}
+        canUndo={fx.canUndo}
+        canRedo={fx.canRedo}
+        onImport={openImport}
+        onUndo={fx.undo}
+        onRedo={fx.redo}
+        onResetEffect={fx.resetEffect}
+        resetDisabled={!fx.effect}
+        onNewProject={() => setConfirmNew(true)}
+        onExport={openExport}
+        onAi={() => setAiOpen(true)}
+        onAbout={openAbout}
+        projectMenu={projectMenu}
+      />
+      {aiOpen && <AiManager onClose={() => setAiOpen(false)} />}
+      {guideOpen && mode === 'depth' && <DepthGuide {...wsProps} onClose={() => setGuideOpen(false)} onImport={openImport} onExport={openExport} />}
+      {inLive ? <LivePanel processedRef={processedRef} setFrameSink={(f) => { frameSink.current = f; }} activeEffect={fx.effect?.id ?? null} onSelect={fx.select} onAdd={fx.add} picking={picking} onPick={() => setPicking((p) => !p)} /> : mode === 'depthlab' ? <DepthLab onOpenSample={async (id) => { await load(await loadSampleFile(id)); switchMode('depth'); }} /> : mode === 'key' ? <KeyPanel {...wsProps} /> : mode === 'depth' ? <DepthPanel {...wsProps} /> : mode === 'cleanup' ? <CleanupPanel {...wsProps} /> : (
+        <EffectSidebar activeId={fx.effect?.id ?? null} onSelect={fx.select} onAdd={fx.add} onWorkspace={switchMode} />
+      )}
+      {mode !== 'depthlab' && previewEl}
+      {mode !== 'depthlab' && <RightPanel tab={tab} onTab={setTab} audioActive={!!audio.kind} linkCount={linkCount} adjusted={fx.adjust.enabled && !adjustIsNeutral(fx.adjust.params)}>
+        {panelBody(true)}
+      </RightPanel>}
+      {statusBar}
+      {dialogs}
     </div>
   );
 }

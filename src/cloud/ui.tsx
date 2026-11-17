@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { account, limits, useAccount } from './account';
-import { APP_VERSION, cloudEnabled, explain, requireAccount } from './client';
+import { APP_VERSION, cloudEnabled, explain } from './client';
+import { AuthScreen, openAbout, type AuthMode } from '../intro/Intro';
 import { cloudProjects, mediaLibrary, type CloudProject, type MediaItem } from './storage';
 import { useInstall } from '../pwa/install';
 
@@ -26,49 +27,9 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose?: ()
 
 /* ───────────── Signing in ───────────── */
 
-type AuthMode = 'login' | 'signup' | 'forgot';
-
+/** Log in, sign up or reset: the full-screen account screen, opened from the editor. */
 export function AuthDialog({ initial = 'login', onClose }: { initial?: AuthMode; onClose?: () => void }) {
-  const [mode, setMode] = useState<AuthMode>(initial);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    setBusy(true); setMsg(null);
-    try {
-      if (mode === 'login') { await account.signIn(email.trim(), password); onClose?.(); }
-      else if (mode === 'signup') {
-        const r = await account.signUp(email.trim(), password, name);
-        if (r.needsConfirmation) setMsg({ ok: true, text: `Almost there: we sent a confirmation link to ${email.trim()}. Open it to activate your account, then log in.` });
-        else onClose?.();
-      } else {
-        await account.sendReset(email.trim());
-        setMsg({ ok: true, text: 'If an account uses that email, a link to set a new password is on its way.' });
-      }
-    } catch (err) { setMsg({ ok: false, text: explain(err) }); }
-    finally { setBusy(false); }
-  };
-
-  return (
-    <Modal title={mode === 'login' ? 'Log In To AirFx' : mode === 'signup' ? 'Create Your Account' : 'Reset Your Password'} onClose={onClose}>
-      <form className="acct__form" onSubmit={submit}>
-        {mode === 'signup' && <label className="ctl"><span className="label">Name</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={80} /></label>}
-        <label className="ctl"><span className="label">Email</span><input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" autoFocus /></label>
-        {mode !== 'forgot' && <label className="ctl"><span className="label">Password</span><input className="input" type="password" required minLength={mode === 'signup' ? 8 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />{mode === 'signup' && <span className="small muted">At least 8 characters.</span>}</label>}
-        {msg && <p className={`small ${msg.ok ? 'ok' : 'error'}`} role="status">{msg.text}</p>}
-        <button className="btn btn--accent btn--lg btn--block" disabled={busy}>{busy ? 'One moment…' : mode === 'login' ? 'Log In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}</button>
-      </form>
-      <div className="acct__switch small">
-        {mode !== 'login' && <button className="text-link" onClick={() => { setMode('login'); setMsg(null); }}>I have an account</button>}
-        {mode !== 'signup' && <button className="text-link" onClick={() => { setMode('signup'); setMsg(null); }}>Create an account</button>}
-        {mode !== 'forgot' && <button className="text-link" onClick={() => { setMode('forgot'); setMsg(null); }}>Forgot password?</button>}
-      </div>
-    </Modal>
-  );
+  return <AuthScreen initial={initial} onBack={onClose} backLabel="Back To Editor" />;
 }
 
 /** After following a reset link: choose a new password. */
@@ -142,6 +103,7 @@ export function AccountDialog({ onClose }: { onClose: () => void }) {
             {install.installed && <p className="small ok">AirFx is installed on this device.</p>}
             {!install.canInstall && !install.installed && <p className="small muted">{install.hint}</p>}
             <p className="small muted">AirFx {APP_VERSION}. Your effects run on this device; the server only stores your account, projects and presets.</p>
+            <button className="text-link small" onClick={() => { onClose(); openAbout(); }}>About AirFx, contact and legal</button>
           </fieldset>
           <div className="acct__row">
             <button className="btn" disabled={busy} onClick={async () => { await account.signOut(); onClose(); }}>Log Out</button>
@@ -247,35 +209,5 @@ export function CloudDialog({ onClose, onOpenProject, onOpenMedia }: { onClose: 
         </>
       )}
     </Modal>
-  );
-}
-
-/* ───────────── Welcome ───────────── */
-
-const WELCOME_KEY = 'airfx.welcome.v1';
-
-/**
- * First visit while signed out: create an account, log in, or (unless the site
- * requires an account) continue as a guest, saving on this device only.
- */
-export function WelcomeGate() {
-  const a = useAccount();
-  const [dismissed, setDismissed] = useState(() => { try { return localStorage.getItem(WELCOME_KEY) === 'guest'; } catch { return false; } });
-  const [auth, setAuth] = useState<AuthMode | null>(null);
-  if (!cloudEnabled || !a.ready || a.user || (dismissed && !requireAccount)) return null;
-  if (auth) return <AuthDialog initial={auth} onClose={requireAccount ? undefined : () => setAuth(null)} />;
-  return (
-    <div className="welcome" role="dialog" aria-label="Welcome to AirFx">
-      <div className="welcome__card">
-        <span className="welcome__mark">AirFx</span>
-        <h1>Experimental visual effects for images and video</h1>
-        <p className="muted">Over a hundred effects, real-time preview, AI depth and keying, audio-reactive visuals and full-quality export. Everything runs in your browser.</p>
-        <div className="welcome__actions">
-          <button className="btn btn--accent btn--lg" onClick={() => setAuth('signup')}>Create Free Account</button>
-          <button className="btn btn--lg" onClick={() => setAuth('login')}>Log In</button>
-        </div>
-        {!requireAccount && <button className="text-link" onClick={() => { try { localStorage.setItem(WELCOME_KEY, 'guest'); } catch { /* private mode */ } setDismissed(true); }}>Continue without an account (work saves on this device only)</button>}
-      </div>
-    </div>
   );
 }
