@@ -5,7 +5,8 @@ import { createCanvas, get2d } from '../utils/imageProcessing';
 
 /**
  * Previews for the intro, the log-in screen and the About page: the real
- * AirFx renderers run on a bundled sample photo (public/samples, CC0), so what
+ * AirFx renderers run on the showcase photo (public/showcase/photo.jpg, or the
+ * bundled CC0 sample if it is missing), so what
  * a visitor sees is exactly what the effect does. Rendered once, in the
  * background, one effect at a time, and shared by every screen.
  */
@@ -36,16 +37,30 @@ let snapshot: Preview[] = [];
 
 function emit() { snapshot = [...done]; listeners.forEach((f) => f()); }
 
-async function source(): Promise<HTMLCanvasElement> {
+export const SHOWCASE_PHOTO = '/showcase/photo.jpg';
+export const SHOWCASE_VIDEO = '/showcase/video.mp4';
+export const SHOWCASE_GIF = '/showcase/animation.gif';
+const SAMPLE = '/samples/portrait.jpg';
+let original = SHOWCASE_PHOTO;
+
+async function load(url: string) {
   const img = new Image();
   img.decoding = 'async';
-  img.src = '/samples/portrait.jpg';
+  img.src = url;
   await img.decode();
-  // Cover-crop to 4:5, a little above centre so the face stays in frame.
+  return img;
+}
+
+async function source(): Promise<HTMLCanvasElement> {
+  let img: HTMLImageElement;
+  try { img = await load(SHOWCASE_PHOTO); } catch { original = SAMPLE; img = await load(SAMPLE); }
+  // Cover-crop to 4:5, zoomed in on the subject (the showcase photo has them small, in the middle).
   const c = createCanvas(W, H), g = get2d(c, true);
-  const k = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+  const zoom = original === SHOWCASE_PHOTO ? 1.35 : 1, fx = 0.48, fy = original === SHOWCASE_PHOTO ? 0.6 : 0.35;
+  const k = Math.max(W / img.naturalWidth, H / img.naturalHeight) * zoom;
   const w = img.naturalWidth * k, h = img.naturalHeight * k;
-  g.drawImage(img, (W - w) / 2, (H - h) * 0.35, w, h);
+  const x = Math.min(0, Math.max(W - w, W / 2 - fx * w)), y = Math.min(0, Math.max(H - h, H / 2 - fy * h));
+  g.drawImage(img, x, y, w, h);
   return c;
 }
 
@@ -77,6 +92,6 @@ export const previews = {
   start: () => { void run(); },
   subscribe: (f: () => void) => { listeners.add(f); return () => { listeners.delete(f); }; },
   get: () => snapshot,
-  /** The untouched sample, for a before/after. */
-  original: '/samples/portrait.jpg',
+  /** The untouched photo, for a before/after. */
+  get original() { return original; },
 };

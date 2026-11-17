@@ -82,7 +82,7 @@
 .sp__copy { display: flex; flex-direction: column; justify-content: center; gap: 18px; min-width: 0; }
 .sp__kicker { color: var(--text-3); margin: 0; }
 .sp__word { margin: 0; line-height: 0; }
-.sp__word .wordmark { width: min(100%, 620px); height: auto; aspect-ratio: 340 / 122;filter: drop-shadow(3px 0 0 rgba(255, 62, 165, 0.55)) drop-shadow(-3px 0 0 rgba(54, 214, 255, 0.5)); }
+.sp__word .wordmark { width: min(100%, 620px); height: auto; aspect-ratio: 340 / 122; }
 .sp__claim { margin: 0; font-size: clamp(26px, 3.6vw, 52px); font-weight: 700; line-height: 1; letter-spacing: -0.035em; }
 .sp__claim em, .auth__title em, .auth__quote em, .ab__statement em { font-family: var(--serif); font-weight: 400; font-style: italic; color: var(--accent); letter-spacing: -0.01em; }
 .sp__lead { margin: 0; max-width: 44ch; font-size: clamp(14px, 1.2vw, 17px); line-height: 1.5; color: var(--text-2); }
@@ -438,3 +438,12 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
   .app--phone > .mnav { grid-column: 1 / -1; grid-row: 4; }
   .mnav button { min-height: 44px; flex-direction: row; gap: 8px; }
 }
+
+/* -- Live effects on the showcase video and GIF --------------- */
+.livefx { position: relative; margin: 0; overflow: hidden; background: var(--bg-2); }
+.livefx__src, .livefx__fx { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.livefx__fx { animation: reveal 1.1s cubic-bezier(0.7, 0, 0.2, 1) both; }
+.livefx__edge { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--accent); box-shadow: 0 0 18px var(--accent); animation: edge 1.1s cubic-bezier(0.7, 0, 0.2, 1) both; pointer-events: none; }
+.livefx figcaption, .livefx .hero__cap, .livefx .hero__tag { z-index: 1; }
+.ab__strip .ab__live { aspect-ratio: 4 / 5; scroll-snap-align: start; }
+@media (prefers-reduced-motion: reduce) { .livefx__fx, .livefx__edge { animation: none; } }

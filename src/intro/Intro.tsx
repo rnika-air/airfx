@@ -5,7 +5,8 @@ import { account, useAccount } from '../cloud/account';
 import { cloudEnabled, explain, requireAccount } from '../cloud/client';
 import { About } from '../about/About';
 import { CREATOR } from '../about/config';
-import { previews, type Preview } from './previews';
+import { previews, SHOWCASE_GIF, SHOWCASE_VIDEO, type Preview } from './previews';
+import { LiveFx } from './LiveFx';
 
 /**
  * The way into AirFx: an intro screen, the log-in / sign-up screen that
@@ -45,7 +46,25 @@ function Tile({ p, i, className = '' }: { p?: Preview; i: number; className?: st
   );
 }
 
-/** Before → after, sweeping through the effects one by one. */
+/** The showcase video with effects running on it live. Falls back to the photo sweep. */
+function LiveHero({ list }: { list: Preview[] }) {
+  return (
+    <LiveFx
+      src={SHOWCASE_VIDEO}
+      kind="video"
+      className="hero"
+      fallback={<Hero list={list} />}
+      caption={(name, i, n) => (
+        <>
+          <div className="hero__cap mono"><span>{String(i + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}</span><strong>{name}</strong></div>
+          <span className="hero__tag mono">Live · Video</span>
+        </>
+      )}
+    />
+  );
+}
+
+/** Before → after on the photo, sweeping through the effects one by one. */
 function Hero({ list }: { list: Preview[] }) {
   const [i, setI] = useState(0);
   useEffect(() => {
@@ -116,7 +135,7 @@ export function Splash({ onEnter, onAuth, onAbout }: { onEnter?: () => void; onA
         </section>
 
         <section className="sp__stage" aria-label="Effect previews">
-          <Hero list={list} />
+          <LiveHero list={list} />
           <div className="sp__tiles">
             {Array.from({ length: 6 }, (_, i) => <Tile key={i} p={list[i + 1]} i={i} />)}
           </div>
@@ -184,7 +203,8 @@ export function AuthScreen({ initial = 'login', onBack, backLabel = 'Back', onGu
       <main className="auth__main">
         <aside className="auth__art" aria-hidden>
           <div className="auth__mosaic">
-            {Array.from({ length: 4 }, (_, i) => <Tile key={i} p={list[i + 4] ?? list[i]} i={i + 4} />)}
+            <LiveFx src={SHOWCASE_GIF} kind="gif" className="tile" offset={2} fallback={<Tile p={list[4] ?? list[0]} i={4} />} caption={(name) => <figcaption className="mono"><span>GIF</span>{name}</figcaption>} />
+            {Array.from({ length: 3 }, (_, i) => <Tile key={i} p={list[i + 5] ?? list[i]} i={i + 5} />)}
           </div>
           <p className="auth__quote">Glitch it, melt it, print it, <em>make it move.</em></p>
         </aside>

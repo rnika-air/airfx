@@ -72,7 +72,7 @@ function finishBuild(): Plugin {
       }
       // Offline shell: pages, scripts, styles, icons. Not the large runtimes (cached on first use).
       const files = walk(dist).map((f) => '/' + relative(dist, f).replace(/\\/g, '/'))
-        .filter((u) => !u.startsWith('/ort/') && !u.startsWith('/mediapipe/') && !u.startsWith('/samples/') && !/\.(wasm|map)$/.test(u) && u !== '/sw.js' && !u.startsWith('/_'));
+        .filter((u) => !u.startsWith('/ort/') && !u.startsWith('/mediapipe/') && !u.startsWith('/samples/') && !u.startsWith('/showcase/') && !/\.(wasm|map)$/.test(u) && u !== '/sw.js' && !u.startsWith('/_'));
       const shell = ['/', ...files].filter((u) => u === '/' || statSync(join(dist, u)).size < 8 * 1024 * 1024);
       const template = readFileSync(join(process.cwd(), 'src', 'pwa', 'sw-template.js'), 'utf8');
       writeFileSync(join(dist, 'sw.js'), template.split("'__VERSION__'").join(`'${pkg.version}-${Date.now().toString(36)}'`).split('= __PRECACHE__;').join(`= ${JSON.stringify(shell)};`));
