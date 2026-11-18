@@ -106,7 +106,7 @@ export const radialBlur: EffectDefinition = {
   params: [
     S('mode', 'Mode', 'zoom', [['zoom', 'Zoom'], ['spin', 'Spin'], ['both', 'Zoom + Spin']], 'Blur'),
     R('amount', 'Amount', 0, 1, 0.005, 0.35, 'Blur'),
-    R('spin', 'Spin Angle', 0, 90, 0.5, 12, 'Blur'),
+    { ...R('spin', 'Spin Angle', 0, 90, 0.5, 12, 'Blur'), visibleWhen: (v) => v.mode !== 'zoom' },
     R('samples', 'Quality', 6, 64, 1, 28, 'Blur', 'More copies give smoother streaks.'),
     T('outward', 'Streak Outward Only', false, 'Blur'),
     R('cx', 'Center X', 0, 1, 0.005, 0.5, 'Center'),

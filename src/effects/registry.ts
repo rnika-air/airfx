@@ -27,7 +27,7 @@ import { printAnimate } from './printAnimate';
 import { stars } from './stars';
 import { datamosh } from './datamosh';
 import { vhs } from './vhs';
-import { STACKS } from './stacks';
+import { RETIRED_STACKS, STACKS } from './stacks';
 import { ADJUSTMENTS } from './adjust/adjustments';
 import { ditherLab } from './ditherLab';
 import { OPTICAL } from './optical';
@@ -96,9 +96,9 @@ export const LIBRARY = EFFECTS.filter((e) => !e.hidden);
 /** Shown greyed-out in the library so the roadmap is visible but honest. */
 export const PLANNED_EFFECTS: PlannedEffect[] = [];
 
-export const CATEGORY_ORDER: EffectCategory[] = ['stacks', 'pattern', 'distortion', 'texture', 'light', 'adjust', 'analog', 'key', 'depth', 'type', 'animate'];
+export const CATEGORY_ORDER: EffectCategory[] = ['pattern', 'distortion', 'texture', 'light', 'adjust', 'analog', 'key', 'depth', 'type', 'animate'];
 
-const byId = new Map(EFFECTS.map((e) => [e.id, e]));
+const byId = new Map([...EFFECTS, ...RETIRED_STACKS].map((e) => [e.id, e]));
 
 export function getEffect(id: string): EffectDefinition | undefined {
   return byId.get(id);

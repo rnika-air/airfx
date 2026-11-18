@@ -227,7 +227,7 @@ export const glyphArray: EffectDefinition = withContent({
     },
     { key: 'target', label: 'Target Color', type: 'color', group: 'Selection', default: '#d6246e', visibleWhen: (v) => v.select === 'color' },
     { key: 'tolerance', label: 'Tolerance', type: 'range', group: 'Selection', min: 2, max: 180, step: 1, default: 45, unit: '°', visibleWhen: (v) => v.select === 'color' || v.select === 'vivid' },
-    { key: 'threshold', label: 'Threshold', type: 'range', group: 'Selection', min: 0, max: 1, step: 0.01, default: 0.45, visibleWhen: (v) => v.select !== 'all' && v.select !== 'color' },
+    { key: 'threshold', label: 'Threshold', type: 'range', group: 'Selection', min: 0, max: 1, step: 0.01, default: 0.45, visibleWhen: (v) => v.select === 'dark' || v.select === 'light' || v.select === 'edges' },
     {
       key: 'colorMode', label: 'Tile Color', type: 'select', group: 'Color', default: 'palette',
       options: [{ value: 'palette', label: 'Two Colors' }, { value: 'source', label: 'From Image' }],

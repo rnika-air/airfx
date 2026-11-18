@@ -5,7 +5,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 
 ## Unreleased
 ### Intro
-- New composition: the original A logo beside the AirFx lettering from the logo artwork as the main wordmark (the hand-drawn swash is gone), and the live preview now overlaps the effect tiles like prints laid on a table, on the right. The cards float gently; moving the pointer over them tilts the layers apart and lifts the card under the pointer.
+- AIRFX is the centrepiece: the AirFx lettering from the logo artwork, huge and lime in the middle of the screen (the hand-drawn swash is gone; the original A stays in the top bar). The live preview and an effect print lean in from either side, half behind it, with two more prints further back; the intro line and Enter sit beneath. The cards float gently; moving the pointer tilts the layers apart and lifts the card under the pointer. Phones stack it: wordmark, two prints, copy.
+- The front-page credit now reads Created by MIKAIR. The information page keeps the full credit (MIKAIR, Iman Mikhail, Malaysia).
 - Sharper on high-resolution and 4K screens: the live preview renders at the card's real size in device pixels instead of a fixed 360 × 450 stretched up, the tiles render larger, the dot opening is drawn by the GPU at full screen resolution, the wordmark is vector, the textured A is never shown larger than its own pixels, and text uses crisp antialiasing.
 - A white A cursor on the intro, log-in and information pages (with a mouse; the editor and touch screens keep their usual cursors, text fields keep the text cursor).
 
@@ -17,6 +18,24 @@ Each release's section becomes its GitHub Release notes. Write changes under
 - Depth Lab moved out of the workspace tabs into a new Experimental menu (and an Experimental group in the phone menu). It works as before; the Depth panel's Open Depth Test Lab button still opens it.
 - AI is now Air throughout the interface: Air Models, Air Status, Air Worker, Air Diagnostics, Air Analysis, Air Reconstruction, error and status messages, and the information page. Model names and files are unchanged.
 - Phone header: the logo and the workspace menu are now separate buttons.
+
+### Effect library
+- The Stacks folder is gone. Multi Threshold and Gameboy, which flatten a picture into a few printed tones, moved to Texture & Print with their settings unchanged. Hyper Glitch, Red Data, Pixel Stars, Array Riso and Array Airbrush were combinations of effects already in the library; they are no longer listed, but projects that use them still open and render.
+
+### Ink Bleed
+- Looks like real ink in paper: fresh ink stays wet and keeps creeping outward along the paper's fibres (faster where the paper soaks it up), then dries and holds. Thin ink is a see-through wash, dense ink goes solid, the drying edge darkens into a rim, and a fine paper grain breaks up the edges at full resolution. On a photo, ink starts from the picture's own darkest parts (or edges, or brightest parts) and keeps blooming and spreading in slow patches.
+- New default: black ink, multiplied into the picture, on a new Image On Paper background (the picture printed faintly on paper, adjustable with Image Strength). Ink colour presets: Black Ink, Deep Navy, Dark Blue, Dark Red, Sepia, plus Navy + Red. Any colour can still be picked.
+- New Dry Time control. Motion controls show only when ink follows movement, and Layer Separation only with more than one colour.
+
+### Sound Visualizer
+- Two new main forms. Spectral Strands: stacked glowing strands of pixel blocks across the frame, one per frequency band (or the whole spectrum, delayed strand by strand), each a record of its loudness flowing from the centre or scrolling, with stray pixels thrown off by the highs. Type Blocks: your own text, in your own font, set letter by letter across the frame, letters where the sound is sitting on colour blocks that reshuffle on each hit, rows drifting sideways at the pace of their band.
+- New presets: Spectral Strands (the new default), Signal Stack, Type Blocks, Type Blocks Night. Ridgelines, Spectral Form, XY Scope, Custom Graphic and the other presets are kept; Liquid Form, Swiss Orbits, Ridgelines and XY Scope now fill the frame. New Riso Blocks palette.
+- New Layout controls for every form: Full Frame, Size, Width, Height, Position X and Y, Rotation, Spacing, Offset and Intensity. Ridgelines and the other forms are laid out to fill the frame rather than just enlarged. Kinetic type has a horizontal position too.
+- Interference Rings removed. Projects that used it show the Spectral Form instead.
+- In silence, strands rest as faint lines, so the layout is visible before the sound starts.
+
+### Controls that do something
+- Every control of every effect was checked by changing it and comparing the render. Controls that only work in a certain mode now appear only in that mode: Bevel Depth (Bevelled Tile), Spin Angle (Spin modes), Gap Color and outline settings (Pixel Art), Threshold (Glyph Array shadows, highlights or edges), Second Color and Line Width (Audio Shapes), and the Custom Content settings, which now show only when a shape is set to Custom Content.
 
 ### Faster
 - CRT, Chromatic Aberration, Moiré and Film Grain run on the GPU (WebGL2) when available, with the same maths as before (results match the CPU version to within rounding): 20 to 200 times faster each, in the preview and in exports, at any size the GPU supports. Without WebGL2 they run on the CPU as before.

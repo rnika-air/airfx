@@ -92,9 +92,16 @@ export const CONTENT_PRESETS: { name: string; values: ParamValues }[] = [
   { name: 'Wide Outline', values: { cMode: 'typography', cFont: 'Verdana, Geneva, sans-serif', cWeight: 700, cCase: 'upper', cLetter: 0.25, cFilled: false, cStroke: 6, cStrokeColor: '#c6ff2e' } },
 ];
 
-/** Adds the content block to an effect. Its default look is unchanged. */
-export function withContent(effect: EffectDefinition, options: { layout?: boolean; extra?: ParamDef[] } = {}): EffectDefinition {
-  return { ...effect, supportsContent: true, params: [...effect.params, ...(options.layout ? LAYOUT_PARAMS : []), ...CONTENT_PARAMS, ...(options.extra ?? [])] };
+/**
+ * Adds the content controls to an effect; its default look is unchanged. The
+ * optional `when` limits them to the settings that
+ * actually draw content (for example a shape set to Custom Content), so they
+ * never show while they would do nothing.
+ */
+export function withContent(effect: EffectDefinition, options: { layout?: boolean; extra?: ParamDef[]; when?: (v: ParamValues) => boolean } = {}): EffectDefinition {
+  const when = options.when;
+  const gate = (list: ParamDef[]) => (when ? list.map((p) => ({ ...p, visibleWhen: (v: ParamValues) => when(v) && (!p.visibleWhen || p.visibleWhen(v)) })) : list);
+  return { ...effect, supportsContent: true, params: [...effect.params, ...gate([...(options.layout ? LAYOUT_PARAMS : []), ...CONTENT_PARAMS, ...(options.extra ?? [])])] };
 }
 
 /* ── Elements ───────────────────────────────────────────────────── */

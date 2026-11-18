@@ -567,3 +567,57 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
   .ab__ring { top: -34px; right: 18px; width: 76px; }
   .ab__alias { font-size: 21vw !important; }
 }
+
+/* ── Front page stage: AIRFX as the centrepiece ────────────────
+   The lettering sits huge in the middle, in lime; the live preview and an
+   effect print lean in from either side, half behind it; the intro line and
+   Enter sit beneath. Phones stack it: wordmark, the two prints, copy. */
+.sp__main--stage { display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; position: relative; overflow: hidden; }
+.sp__main--stage > * { grid-area: 1 / 1; }
+.sp__main--stage .sp__collage { width: 100%; height: 100%; max-width: none; aspect-ratio: auto; justify-self: stretch; align-self: stretch; z-index: 1; }
+.sp__main--stage .sp__card { width: clamp(190px, 21vw, 380px); }
+.sp__main--stage .sp__card--hero { left: 1.5%; top: 50%; margin-top: calc(clamp(190px, 21vw, 380px) * -0.66); rotate: -8deg; z-index: 3; --d: 1.4; }
+.sp__main--stage .sp__card--t0 { left: auto; right: 1.5%; top: 50%; margin-top: calc(clamp(190px, 21vw, 380px) * -0.58); rotate: 7deg; z-index: 3; --d: 1.2; }
+.sp__main--stage .sp__card--t1 { left: 15%; top: 2%; width: clamp(110px, 11vw, 200px); rotate: -4deg; z-index: 1; opacity: 0.5; --d: 0.5; }
+.sp__main--stage .sp__card--t2 { left: auto; right: 15%; top: auto; bottom: 2%; width: clamp(110px, 11vw, 200px); rotate: 5deg; z-index: 1; opacity: 0.5; --d: 0.5; }
+.sp__main--stage .sp__card--t3 { display: none; }
+.sp__main--stage .sp__card:hover { opacity: 1; }
+.sp__main--stage .sp__sticker { left: auto; right: -26px; top: -18px; }
+.sp__main--stage .sp__copy { position: relative; z-index: 6; align-items: center; text-align: center; gap: clamp(12px, 2vh, 22px); pointer-events: none; padding: 0 clamp(12px, 3vw, 40px); }
+.sp__main--stage .sp__copy > * { pointer-events: auto; }
+.sp__main--stage .sp__lockup { display: block; }
+.sp__main--stage .sp__word { display: block; width: min(64vw, 112vh, 1180px); max-width: none; fill: var(--accent); filter: drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7)); transition: filter 0.5s, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.sp__main--stage .sp__lockup:hover .sp__word { filter: drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 34px rgba(198, 255, 46, 0.4)); transform: scale(1.012); }
+.sp__main--stage .sp__kicker { margin: 0; text-shadow: 0 1px 10px #050605; }
+.sp__main--stage .sp__lead { max-width: 44ch; font-size: clamp(15px, 1.2vw, 19px); margin: 0 auto; text-shadow: 0 1px 14px #050605, 0 0 2px #050605; }
+.sp__main--stage .sp__cta { justify-content: center; }
+@media (max-width: 1100px) and (min-width: 761px) {
+  .sp__main--stage { overflow: hidden; }
+  .sp__main--stage .sp__collage { width: 100%; }
+  .sp__main--stage .sp__word { width: min(80vw, 100vh); }
+  .sp__main--stage .sp__card { width: 24vw; }
+  .sp__main--stage .sp__card--hero, .sp__main--stage .sp__card--t0 { margin-top: -16vw; }
+  .sp__main--stage .sp__card--t1, .sp__main--stage .sp__card--t2 { display: none; }
+}
+@media (max-width: 760px) {
+  .sp__main--stage { display: flex; flex-direction: column; align-items: stretch; overflow: visible; }
+  .sp__main--stage .sp__copy { display: contents; }
+  .sp__main--stage .sp__kicker { order: 1; text-align: center; }
+  .sp__main--stage .sp__lockup { order: 2; }
+  .sp__main--stage .sp__word { width: 100%; margin: 0 auto; }
+  .sp__main--stage .sp__collage { order: 3; position: relative; height: 60vw; width: 100%; margin: 4px 0 0; }
+  .sp__main--stage .sp__card { width: 42%; }
+  .sp__main--stage .sp__card--hero { left: 4%; top: 6%; margin-top: 0; }
+  .sp__main--stage .sp__card--t0 { right: 4%; top: 10%; margin-top: 0; }
+  .sp__main--stage .sp__card--t1, .sp__main--stage .sp__card--t2 { display: none; }
+  .sp__main--stage .sp__sticker { right: -10px; top: -12px; }
+  .sp__main--stage .sp__lead { order: 4; text-align: center; font-size: 16px; }
+  .sp__main--stage .sp__cta { order: 5; }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .sp__main--stage { overflow-y: auto; }
+  .sp__main--stage .sp__word { width: min(60vw, 120vh); }
+  .sp__main--stage .sp__card { width: 18vw; }
+  .sp__main--stage .sp__card--t1, .sp__main--stage .sp__card--t2 { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .sp__main--stage .sp__word { transition: none; } .sp__main--stage .sp__lockup:hover .sp__word { transform: none; } }

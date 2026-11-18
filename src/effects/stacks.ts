@@ -12,8 +12,7 @@ import { airbrush, glyphArray } from './referenceFx';
 import { AUTO_TONE } from './tone';
 
 /**
- * Stacks: ready-made looks built from two effects layered with tuned
- * settings. A stack exposes a few friendly controls and maps them onto the
+ * Two-step looks: two effects layered with tuned settings. A stack exposes a few friendly controls and maps them onto the
  * underlying effects' parameters.
  */
 interface Step {
@@ -26,11 +25,11 @@ interface Step {
 
 const buffers = [createCanvas(1, 1), createCanvas(1, 1)];
 
-function makeStack(def: { id: string; name: string; description: string; params: ParamDef[]; steps: Step[]; animated?: EffectDefinition['animated']; audioDefaults?: EffectDefinition['audioDefaults'] }): EffectDefinition {
+function makeStack(def: { id: string; name: string; description: string; category?: EffectDefinition['category']; params: ParamDef[]; steps: Step[]; animated?: EffectDefinition['animated']; audioDefaults?: EffectDefinition['audioDefaults'] }): EffectDefinition {
   return {
     id: def.id,
     name: def.name,
-    category: 'stacks',
+    category: def.category ?? 'texture',
     description: def.description,
     params: def.params,
     animated: def.animated,
@@ -72,11 +71,11 @@ export const hyperGlitch = makeStack({
   animated: () => true,
   audioDefaults: { intensity: { band: 'beat', amount: 0.4 } },
   params: [
-    { key: 'intensity', label: 'Intensity', type: 'range', group: 'Stack', min: 0, max: 1, step: 0.01, default: 0.6 },
-    { key: 'block', label: 'Block Size', type: 'range', group: 'Stack', min: 4, max: 120, step: 1, default: 24 },
-    { key: 'split', label: 'RGB Split', type: 'range', group: 'Stack', min: 0, max: 60, step: 0.5, default: 14 },
-    { key: 'rate', label: 'Speed', type: 'range', group: 'Stack', min: 1, max: 24, step: 0.5, default: 10, unit: 'fps' },
-    { key: 'seed', label: 'Seed', type: 'seed', group: 'Stack', default: 7 },
+    { key: 'intensity', label: 'Intensity', type: 'range', group: 'Look', min: 0, max: 1, step: 0.01, default: 0.6 },
+    { key: 'block', label: 'Block Size', type: 'range', group: 'Look', min: 4, max: 120, step: 1, default: 24 },
+    { key: 'split', label: 'RGB Split', type: 'range', group: 'Look', min: 0, max: 60, step: 0.5, default: 14 },
+    { key: 'rate', label: 'Speed', type: 'range', group: 'Look', min: 1, max: 24, step: 0.5, default: 10, unit: 'fps' },
+    { key: 'seed', label: 'Seed', type: 'seed', group: 'Look', default: 7 },
   ],
   steps: [
     { effect: pixDisplace, base: { direction: 'horizontal', mixed: true }, map: (p) => ({ block: p.block, coverage: 0.1 + (p.intensity as number) * 0.5, amount: 40 + (p.intensity as number) * 260, smear: 0.35, rate: p.rate, seed: p.seed }) },
@@ -90,10 +89,10 @@ export const redData = makeStack({
   description: 'Red gradient map + binary ASCII: the image as streams of red data.',
   audioDefaults: { size: { band: 'bass', amount: 0.1 } },
   params: [
-    { key: 'size', label: 'Character Size', type: 'range', group: 'Stack', min: 4, max: 40, step: 0.5, default: 10 },
-    { key: 'contrast', label: 'Contrast', type: 'range', group: 'Stack', min: 0.3, max: 3, step: 0.01, default: 1.4 },
-    { key: 'charset', label: 'Characters', type: 'select', group: 'Stack', default: 'binary', options: [{ value: 'binary', label: 'Binary' }, { value: 'standard', label: 'Standard' }, { value: 'blocks', label: 'Blocks' }] },
-    { key: 'red', label: 'Red', type: 'color', group: 'Stack', default: '#ff1f1f' },
+    { key: 'size', label: 'Character Size', type: 'range', group: 'Look', min: 4, max: 40, step: 0.5, default: 10 },
+    { key: 'contrast', label: 'Contrast', type: 'range', group: 'Look', min: 0.3, max: 3, step: 0.01, default: 1.4 },
+    { key: 'charset', label: 'Characters', type: 'select', group: 'Look', default: 'binary', options: [{ value: 'binary', label: 'Binary' }, { value: 'standard', label: 'Standard' }, { value: 'blocks', label: 'Blocks' }] },
+    { key: 'red', label: 'Red', type: 'color', group: 'Look', default: '#ff1f1f' },
     AUTO_TONE,
   ],
   steps: [
@@ -109,10 +108,10 @@ export const pixelStars = makeStack({
   animated: () => true,
   audioDefaults: { starSize: { band: 'bass', amount: 0.2 } },
   params: [
-    { key: 'pixel', label: 'Pixel Size', type: 'range', group: 'Stack', min: 1, max: 12, step: 0.5, default: 4 },
-    { key: 'threshold', label: 'Star Threshold', type: 'range', group: 'Stack', min: 0.3, max: 1, step: 0.005, default: 0.68 },
-    { key: 'starSize', label: 'Star Size', type: 'range', group: 'Stack', min: 10, max: 200, step: 1, default: 54 },
-    { key: 'twinkle', label: 'Twinkle', type: 'range', group: 'Stack', min: 0, max: 5, step: 0.05, default: 1.5 },
+    { key: 'pixel', label: 'Pixel Size', type: 'range', group: 'Look', min: 1, max: 12, step: 0.5, default: 4 },
+    { key: 'threshold', label: 'Star Threshold', type: 'range', group: 'Look', min: 0.3, max: 1, step: 0.005, default: 0.68 },
+    { key: 'starSize', label: 'Star Size', type: 'range', group: 'Look', min: 10, max: 200, step: 1, default: 54 },
+    { key: 'twinkle', label: 'Twinkle', type: 'range', group: 'Look', min: 0, max: 5, step: 0.05, default: 1.5 },
   ],
   steps: [
     { effect: dithering, base: { method: 'bayer', levels: 3, colorDither: true }, map: (p) => ({ pixel: p.pixel }) },
@@ -123,11 +122,12 @@ export const pixelStars = makeStack({
 export const multiThreshold = makeStack({
   id: 'stackMultiThreshold',
   name: 'Multi Threshold',
+  category: 'texture',
   description: 'Posterize into hard tone steps, then snap each step to a flat colour.',
   audioDefaults: { contrast: { band: 'bass', amount: 0.15 } },
   params: [
-    { key: 'levels', label: 'Levels', type: 'range', group: 'Stack', min: 2, max: 6, step: 1, default: 4 },
-    { key: 'contrast', label: 'Contrast', type: 'range', group: 'Stack', min: 0.3, max: 3, step: 0.01, default: 1.3 },
+    { key: 'levels', label: 'Levels', type: 'range', group: 'Look', min: 2, max: 6, step: 1, default: 4 },
+    { key: 'contrast', label: 'Contrast', type: 'range', group: 'Look', min: 0.3, max: 3, step: 0.01, default: 1.3 },
     { key: 'c1', label: 'Shadow', type: 'color', group: 'Colors', default: '#14110f' },
     { key: 'c2', label: 'Low Mid', type: 'color', group: 'Colors', default: '#3d2bff' },
     { key: 'c3', label: 'High Mid', type: 'color', group: 'Colors', default: '#ff4f2e' },
@@ -143,11 +143,12 @@ export const multiThreshold = makeStack({
 export const gameboy = makeStack({
   id: 'stackGameboy',
   name: 'Gameboy',
+  category: 'texture',
   description: 'Ordered dither to four tones, then the classic green handheld palette.',
   params: [
-    { key: 'pixel', label: 'Pixel Size', type: 'range', group: 'Stack', min: 1, max: 12, step: 0.5, default: 3.5 },
-    { key: 'contrast', label: 'Contrast', type: 'range', group: 'Stack', min: 0.3, max: 3, step: 0.01, default: 1.2 },
-    { key: 'method', label: 'Dither', type: 'select', group: 'Stack', default: 'bayer', options: [{ value: 'bayer', label: 'Bayer' }, { value: 'floyd', label: 'Floyd–Steinberg' }] },
+    { key: 'pixel', label: 'Pixel Size', type: 'range', group: 'Look', min: 1, max: 12, step: 0.5, default: 3.5 },
+    { key: 'contrast', label: 'Contrast', type: 'range', group: 'Look', min: 0.3, max: 3, step: 0.01, default: 1.2 },
+    { key: 'method', label: 'Dither', type: 'select', group: 'Look', default: 'bayer', options: [{ value: 'bayer', label: 'Bayer' }, { value: 'floyd', label: 'Floyd–Steinberg' }] },
     AUTO_TONE,
   ],
   steps: [
@@ -157,11 +158,11 @@ export const gameboy = makeStack({
 });
 
 const glyphControls: ParamDef[] = [
-  { key: 'cell', label: 'Cell Size', type: 'range', group: 'Stack', min: 8, max: 80, step: 1, default: 24 },
-  { key: 'target', label: 'Target Color', type: 'color', group: 'Stack', default: '#d6246e' },
-  { key: 'tolerance', label: 'Tolerance', type: 'range', group: 'Stack', min: 2, max: 180, step: 1, default: 60, unit: '°' },
-  { key: 'tile', label: 'Tile Color', type: 'color', group: 'Stack', default: '#ff4fa8' },
-  { key: 'rate', label: 'Motion', type: 'range', group: 'Stack', min: 0, max: 16, step: 0.5, default: 4, unit: 'fps' },
+  { key: 'cell', label: 'Cell Size', type: 'range', group: 'Look', min: 8, max: 80, step: 1, default: 24 },
+  { key: 'target', label: 'Target Color', type: 'color', group: 'Look', default: '#d6246e' },
+  { key: 'tolerance', label: 'Tolerance', type: 'range', group: 'Look', min: 2, max: 180, step: 1, default: 60, unit: '°' },
+  { key: 'tile', label: 'Tile Color', type: 'color', group: 'Look', default: '#ff4fa8' },
+  { key: 'rate', label: 'Motion', type: 'range', group: 'Look', min: 0, max: 16, step: 0.5, default: 4, unit: 'fps' },
 ];
 const glyphMap = (p: ParamValues) => ({ cell: p.cell, target: p.target, tolerance: p.tolerance, tile: p.tile, rate: p.rate });
 
@@ -185,10 +186,10 @@ export const arrayAirbrush = makeStack({
   description: 'Shape tiles matched to the photo, sprayed over with airbrush grain.',
   animated: () => true,
   params: [
-    { key: 'cell', label: 'Cell Size', type: 'range', group: 'Stack', min: 8, max: 80, step: 1, default: 22 },
-    { key: 'coverage', label: 'Coverage', type: 'range', group: 'Stack', min: 0, max: 1, step: 0.01, default: 0.55 },
-    { key: 'glyph', label: 'Shape Color', type: 'color', group: 'Stack', default: '#f7f5ee' },
-    { key: 'rate', label: 'Motion', type: 'range', group: 'Stack', min: 0, max: 16, step: 0.5, default: 4, unit: 'fps' },
+    { key: 'cell', label: 'Cell Size', type: 'range', group: 'Look', min: 8, max: 80, step: 1, default: 22 },
+    { key: 'coverage', label: 'Coverage', type: 'range', group: 'Look', min: 0, max: 1, step: 0.01, default: 0.55 },
+    { key: 'glyph', label: 'Shape Color', type: 'color', group: 'Look', default: '#f7f5ee' },
+    { key: 'rate', label: 'Motion', type: 'range', group: 'Look', min: 0, max: 16, step: 0.5, default: 4, unit: 'fps' },
   ],
   steps: [
     { effect: glyphArray, base: { select: 'all', colorMode: 'source', glyphs: 'x+os' }, map: (p) => ({ cell: p.cell, rate: p.rate, coverage: p.coverage, glyph: p.glyph }) },
@@ -196,4 +197,10 @@ export const arrayAirbrush = makeStack({
   ],
 });
 
-export const STACKS = [hyperGlitch, redData, pixelStars, multiThreshold, gameboy, arrayRiso, arrayAirbrush];
+/** Listed in the library (Texture & Print). */
+export const STACKS = [multiThreshold, gameboy];
+/**
+ * Retired from the library when the Stacks folder went away. Still registered,
+ * so saved projects that use them keep rendering.
+ */
+export const RETIRED_STACKS = [hyperGlitch, redData, pixelStars, arrayRiso, arrayAirbrush];

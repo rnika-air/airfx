@@ -79,13 +79,15 @@ function Ticker() {
   );
 }
 
-/** The intro logo: the original textured A, with the AirFx lettering from the logo artwork as the main wordmark. */
+/**
+ * The front page's centrepiece: the AirFx lettering from the logo artwork, as
+ * large as the screen allows, in lime. It is vector, so it is sharp at any size.
+ * The original A mark stays in the top bar.
+ */
 function Lockup() {
   return (
     <h1 className="sp__lockup">
       <span className="sr-only">AirFx</span>
-      {/* Never shown wider than half its 898 px, so it stays sharp on 2× screens. */}
-      <img className="sp__mark" src="/brand/logo-texture.webp" alt="" width={898} height={455} draggable={false} />
       <svg className="sp__word" viewBox="411 2046 847 217" aria-hidden><path d={WORD_PATH} fillRule="evenodd" /></svg>
     </h1>
   );
@@ -162,10 +164,11 @@ export function Splash({ onEnter, onAuth, onAbout }: { onEnter?: () => void; onA
         </nav>
       </header>
 
-      <main className="sp__main">
+      <main className="sp__main sp__main--stage">
+        <Collage list={list} />
         <section className="sp__copy">
-          <Lockup />
           <p className="sp__kicker mono">(01) {count} effects · images · video · motion · sound</p>
+          <Lockup />
           <p className="sp__lead">{INTRO_TEXT}</p>
           <div className="sp__cta">
             {onEnter && <button ref={enterRef} className="pill pill--ink-solid pill--lg" onClick={onEnter}>Enter AirFx <span aria-hidden>→</span></button>}
@@ -173,12 +176,11 @@ export function Splash({ onEnter, onAuth, onAbout }: { onEnter?: () => void; onA
             {cloudEnabled && <button className="pill pill--ink pill--lg" onClick={() => onAuth('login')}>Log In</button>}
           </div>
         </section>
-        <Collage list={list} />
       </main>
 
       <footer className="sp__foot">
         <div className="sp__base">
-          <p className="sp__fine mono">{onEnter ? 'No account needed to start · ' : ''}Runs in your browser · Your files stay on your device · Created by MIKAIR ({CREATOR.name}), {CREATOR.from}</p>
+          <p className="sp__fine mono">{onEnter ? 'No account needed to start · ' : ''}Runs in your browser · Your files stay on your device · Created by {CREATOR.alias}</p>
         </div>
         <Ticker />
       </footer>

@@ -93,7 +93,7 @@ const base: EffectDefinition = {
     { ...R('spriteWidth', 'Sprite Width', 16, 480, 1, 128, 'Resolution', 'Art pixels across the frame.'), visibleWhen: (v) => v.sizing === 'width' },
     R('density', 'Pixel Density', 0.25, 1, 0.01, 1, 'Pixels', 'How much of each cell the pixel fills.'),
     S('shape', 'Pixel Shape', 'square', [['square', 'Square'], ['rounded', 'Rounded'], ['circle', 'Circle'], ['diamond', 'Diamond'], ['plus', 'Plus'], ['brick', 'Brick'], ['led', 'LED Triad'], ['content', 'Custom Content']], 'Pixels'),
-    C('gapColor', 'Gap Color', '#0b0c0b', 'Pixels'),
+    { ...C('gapColor', 'Gap Color', '#0b0c0b', 'Pixels'), visibleWhen: (v) => !(v.shape === 'square' && (v.density as number) >= 1) },
     S('palette', 'Color Palette', 'auto', [['auto', 'From This Image'], ['levels', 'Levels Per Channel'], ['handheld', 'Handheld, 4 Greens'], ['console8', '8-Bit Console'], ['fantasy', 'Fantasy 16'], ['computer', 'Home Computer'], ['cga', 'Four Color CGA'], ['dusk', 'Synth Dusk'], ['sepia', 'Sepia Print'], ['mono', 'Four Grays'], ['custom', 'Custom List']], 'Color'),
     { ...R('colors', 'Colors', 2, 64, 1, 16, 'Color'), visibleWhen: (v) => pal(v) === 'auto' },
     { ...R('levels', 'Levels', 2, 16, 1, 5, 'Color'), visibleWhen: (v) => pal(v) === 'levels' },
@@ -106,8 +106,8 @@ const base: EffectDefinition = {
     { ...R('ditherAmount', 'Dither Strength', 0, 1, 0.01, 0.45, 'Dither'), visibleWhen: (v) => v.dither !== 'none' },
     R('edges', 'Edge Preservation', 0, 1, 0.01, 0.6, 'Edges', 'Picks a real colour from each cell instead of an average, so edges stay crisp.'),
     R('outline', 'Sprite Outline', 0, 1, 0.01, 0, 'Edges'),
-    R('outlineLevel', 'Outline Threshold', 0.02, 0.6, 0.01, 0.18, 'Edges'),
-    C('outlineColor', 'Outline Color', '#10101a', 'Edges'),
+    { ...R('outlineLevel', 'Outline Threshold', 0.02, 0.6, 0.01, 0.18, 'Edges'), visibleWhen: (v) => (v.outline as number) > 0 },
+    { ...C('outlineColor', 'Outline Color', '#10101a', 'Edges'), visibleWhen: (v) => (v.outline as number) > 0 },
     S('stencil', 'Pixel Cutout', 'none', [['none', 'Off'], ['cutout', 'Show Image Through Shape'], ['overlay', 'Draw Shape Over Image']], 'Cutout'),
     ...[
       S('stencilShape', 'Cutout Shape', 'spiral', [['spiral', 'Spiral'], ['heart', 'Heart'], ['star', 'Star'], ['sparkle', 'Sparkle'], ['ring', 'Ring'], ['flower', 'Flower'], ['content', 'Custom Content']], 'Cutout'),
@@ -273,4 +273,4 @@ const base: EffectDefinition = {
   },
 };
 
-export const pixelArt = withContent(base);
+export const pixelArt = withContent(base, { when: (v) => v.shape === 'content' || v.stencilShape === 'content' });

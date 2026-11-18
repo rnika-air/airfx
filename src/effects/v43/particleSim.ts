@@ -249,4 +249,4 @@ const base: EffectDefinition = {
   },
 };
 
-export const particleSim = withContent(base);
+export const particleSim = withContent(base, { when: (v) => v.shape === 'content' });

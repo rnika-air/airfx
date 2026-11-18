@@ -25,7 +25,7 @@ export const hexMosaic: EffectDefinition = {
     R('zoom', 'Lens Zoom', 0.2, 2, 0.01, 0.75, 'Lens', 'Below 1 magnifies each cell’s piece of the picture.'),
     R('bulge', 'Bulge', 0, 1, 0.01, 0.45, 'Lens'),
     R('gloss', 'Gloss', 0, 1, 0.01, 0.35, 'Light'),
-    R('bevel', 'Bevel Depth', 0, 1, 0.01, 0.5, 'Light'),
+    { ...R('bevel', 'Bevel Depth', 0, 1, 0.01, 0.5, 'Light'), visibleWhen: (v) => v.style === 'bevel' },
     R('light', 'Light Angle', 0, 360, 1, 225, 'Light', 'Where the light comes from.'),
     R('line', 'Rim Width', 0, 8, 0.05, 1.2, 'Rim'),
     C('lineColor', 'Rim Color', '#0b0c0b', 'Rim'),

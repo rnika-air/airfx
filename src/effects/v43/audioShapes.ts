@@ -67,8 +67,8 @@ const base: EffectDefinition = {
     S('bendStyle', 'Bend Style', 'ripple', [['ripple', 'Ripple From Center'], ['wave', 'Waveform Rows'], ['bulge', 'Bulge'], ['twist', 'Twist']], 'Picture'),
     S('look', 'Look', 'fill', [['fill', 'Solid'], ['outline', 'Outline'], ['relief', 'Embossed Relief'], ['glow', 'Neon Glow']], 'Look'),
     C('color', 'Color', '#c6ff2e', 'Look'),
-    C('color2', 'Second Color', '#ff3fa4', 'Look'),
-    R('lineWidth', 'Line Width', 0.5, 30, 0.1, 5, 'Look'),
+    { ...C('color2', 'Second Color', '#ff3fa4', 'Look'), hint: 'Shapes blend from the first colour to this one.', visibleWhen: (v) => (v.count as number) > 1 },
+    { ...R('lineWidth', 'Line Width', 0.5, 30, 0.1, 5, 'Look'), visibleWhen: (v) => v.look !== 'fill' || v.shape === 'ring' },
     S('background', 'Show On', 'image', [['image', 'Picture Or Webcam'], ['dim', 'Dimmed Picture'], ['color', 'Plain Color (Standalone)'], ['clear', 'Transparent']], 'Look'),
     { ...R('dim', 'Dim Picture', 0, 1, 0.01, 0.5, 'Look'), visibleWhen: (v) => v.background === 'dim' },
     { ...C('bgColor', 'Background Color', '#4b5360', 'Look'), visibleWhen: (v) => v.background === 'color' },
@@ -196,5 +196,5 @@ const base: EffectDefinition = {
   },
 };
 
-export const audioShapes = withContent(base);
+export const audioShapes = withContent(base, { when: (v) => v.element === 'content' });
 void ({} as ParamValues);

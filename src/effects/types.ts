@@ -6,7 +6,7 @@
 
 export type EffectCategory =
   | 'pattern' | 'distortion' | 'texture' | 'light' | 'adjust' | 'analog' | 'key' | 'depth' | 'type'
-  | 'animate' | 'stacks';
+  | 'animate';
 
 /** Which media an effect gives a meaningful result on. */
 export type MediaCompat = 'both' | 'image' | 'video';
@@ -186,7 +186,6 @@ export const CATEGORY_LABELS: Record<EffectCategory, string> = {
   depth: 'Depth & Focus',
   type: 'Typography & ASCII',
   animate: 'Animate',
-  stacks: 'Stacks',
 };
 
 export function defaultParams(effect: EffectDefinition): ParamValues {
