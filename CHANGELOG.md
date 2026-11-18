@@ -4,6 +4,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+
+## v5.4.1 (2026-11-18)
 ### Intro
 - The AirFx lettering is now a lime neon sign that melts under the cursor. It has a solid lime core, a glow running from black through dark green to lime, and horizontal scanline stripes. The pointer carries an invisible liquid blob: where it meets the letters they swell, run together and close up like liquid, then settle back into clean type as it moves away. A finger does the same on phones and tablets.
 - The neon is drawn by the GPU (WebGL2) around the logo only. It animates only while something is moving, stops off screen and in background tabs, and the canvas never blocks clicks. Reduced motion shows it still, and without WebGL2 the plain wordmark shows as before.
