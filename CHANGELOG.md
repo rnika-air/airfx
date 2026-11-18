@@ -4,6 +4,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+
+## v5.4.0 (2026-11-18)
 ### Intro
 - AIRFX is the centrepiece: the AirFx lettering from the logo artwork, huge and lime in the middle of the screen (the hand-drawn swash is gone; the original A stays in the top bar). The live preview and an effect print lean in from either side, half behind it, with two more prints further back; the intro line and Enter sit beneath. The cards float gently; moving the pointer tilts the layers apart and lifts the card under the pointer. Phones stack it: wordmark, two prints, copy.
 - The front-page credit now reads Created by MIKAIR. The information page keeps the full credit (MIKAIR, Iman Mikhail, Malaysia).
