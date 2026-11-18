@@ -37,13 +37,22 @@ export function TopBar(p: Props) {
         <span className="topbar__tag">FX LAB · v{__APP_VERSION__}</span>
       </div>
 
-      <div className="segmented segmented--8 segmented--compact topbar__mode" role="tablist" aria-label="Workspace">
-        {(['effects', 'key', 'cleanup', 'depth', 'depthlab', 'live', 'gesture', 'timeline'] as AppMode[]).map((m) => (
+      <div className="segmented segmented--7 segmented--compact topbar__mode" role="tablist" aria-label="Workspace">
+        {(['effects', 'key', 'cleanup', 'depth', 'live', 'gesture', 'timeline'] as AppMode[]).map((m) => (
           <button key={m} role="tab" aria-selected={p.mode === m} className={p.mode === m ? 'on' : ''} onClick={() => p.onMode(m)}>
-            {m === 'depthlab' ? 'Depth Lab' : m === 'gesture' ? 'Gesture Studio' : m[0].toUpperCase() + m.slice(1)}
+            {m === 'gesture' ? 'Gesture Studio' : m[0].toUpperCase() + m.slice(1)}
           </button>
         ))}
       </div>
+      {/* Experimental tools stay out of the editing workspaces, one click away. */}
+      <details className="topbar__lab">
+        <summary className={`btn btn--sm ${p.mode === 'depthlab' ? 'btn--accent' : ''}`} title="Experimental tools">Experimental</summary>
+        <div className="topbar__labmenu" role="menu">
+          <button role="menuitem" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; p.onMode('depthlab'); }}>
+            <strong>Depth Lab</strong><span>Compare depth models on test scenes</span>
+          </button>
+        </div>
+      </details>
 
       <div className="topbar__project">
         <span className="label">Project</span>
@@ -59,7 +68,7 @@ export function TopBar(p: Props) {
 
       <div className="topbar__actions">
         {p.onAbout && <button className="btn" onClick={p.onAbout} title="About AirFx, contact and legal">Info</button>}
-        {p.onAi && <button className="btn" onClick={p.onAi} title="AI model status and diagnostics">AI</button>}
+        {p.onAi && <button className="btn" onClick={p.onAi} title="Air model status and diagnostics">Air</button>}
         <button className="btn" onClick={p.onImport} title="Import media (Ctrl/Cmd + O)">
           Import Media
         </button>

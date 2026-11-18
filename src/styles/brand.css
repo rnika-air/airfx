@@ -71,17 +71,19 @@
 .hero__tag { position: absolute; top: 10px; left: 10px; padding: 3px 8px; background: var(--bg); border: 1px solid var(--line-2); border-radius: 999px; font-size: 9px; }
 
 /* The splash: black, with lime as the highlight, laid out like an independent
-   studio's site. The AirFx mark huge with a hand-drawn swash, the live effect
-   preview laid over it like a cut-out object, hairline pills, a base bar.
-   Behind it all, lime halftone dots that open the page and follow the pointer. */
-.sp { background: #050605; color: var(--text); }
+   studio's site. The original A with the AirFx lettering as the wordmark, the
+   copy, and the live preview overlapping the effect tiles like prints on a
+   table. Behind it all, lime halftone dots that open the page and follow the
+   pointer. Text renders with grayscale antialiasing for crisp type. */
+.sp { background: #050605; color: var(--text); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
 .sp__dots { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; pointer-events: none; }
 .sp__bar, .sp__main, .sp__foot { position: relative; z-index: 1; }
 .sp__bar {
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
   padding: calc(16px + var(--safe-t)) calc(clamp(16px, 2.6vw, 36px) + var(--safe-r)) 10px calc(clamp(16px, 2.6vw, 36px) + var(--safe-l));
 }
-.sp__mark { justify-self: start; }
+.sp__mark-home { justify-self: start; }
+.sp__mark-home .wordmark { height: 30px; }
 .sp__badge { justify-self: center; padding: 5px 12px; border: 1px solid var(--line-2); color: var(--text-2); border-radius: 999px; font-size: 9.5px; white-space: nowrap; }
 .sp__badge em { font-style: normal; opacity: 0.55; }
 .sp__nav { justify-self: end; display: flex; gap: 6px; }
@@ -92,40 +94,48 @@
 .sp .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .sp__main {
-  flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 20px;
+  flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center; gap: clamp(20px, 4vw, 72px);
   padding: clamp(8px, 2vh, 28px) calc(clamp(16px, 2.6vw, 36px) + var(--safe-r)) clamp(14px, 2.4vh, 28px) calc(clamp(16px, 2.6vw, 36px) + var(--safe-l));
 }
-.sp__type { min-width: 0; }
-.sp__word { position: relative; display: inline-block; margin: 0; line-height: 0; }
-/* The mark from the logo artwork, textured; it lifts and glows when you point at it. */
-.sp__logo { display: block; width: min(46vw, 64vh, 780px); height: auto; aspect-ratio: 898 / 455; transition: filter 0.4s, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.sp__logo:hover { filter: drop-shadow(0 0 26px rgba(198, 255, 46, 0.35)) saturate(1.15); transform: translateY(-4px) rotate(-1.2deg); }
-.sp__swash { position: absolute; left: 54%; top: 60%; width: 62%; height: 36%; overflow: visible; pointer-events: none; }
-.sp__swash path { fill: none; stroke: var(--accent); stroke-width: clamp(4px, 0.62vw, 9px); stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 0; }
-.sp__kicker { margin: 14px 0 0 4px; font-size: 9.5px; max-width: 30ch; color: var(--text-3); }
-.sp__object {
-  position: absolute; z-index: 2; right: calc(clamp(16px, 7vw, 120px) + var(--safe-r)); top: 2%;
-  height: min(82%, 600px); aspect-ratio: 4 / 5; rotate: 3.5deg;
-  animation: float 7s ease-in-out infinite;
-}
-.sp__object .hero { height: 100%; border: 0; box-shadow: 0 34px 70px -18px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(198, 255, 46, 0.45); }
-.sp__sticker {
-  position: absolute; z-index: 3; left: -38px; top: 18%; width: 76px; height: 76px; display: grid; place-items: center; text-align: center;
-  border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 9px; font-weight: 700; line-height: 1.3;
-  rotate: -14deg; animation: spin 14s linear infinite;
-}
-@keyframes float { 50% { translate: 0 -10px; rotate: 2deg; } }
-@keyframes spin { to { transform: rotate(360deg); } }
-.sp__copy { max-width: min(560px, 46vw); display: flex; flex-direction: column; gap: 18px; }
-.sp__lead { margin: 0; font-size: clamp(17px, 1.55vw, 23px); line-height: 1.32; font-weight: 500; letter-spacing: -0.015em; text-shadow: 0 1px 12px #050605; }
+.sp__copy { min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+/* The lockup: the textured A beside the AirFx lettering, both from the logo artwork. */
+.sp__lockup { display: flex; align-items: center; gap: clamp(12px, 1.6vw, 26px); margin: 0; line-height: 0; }
+.sp__mark { flex: 0 0 auto; width: min(18vw, 28vh, 360px); height: auto; aspect-ratio: 898 / 455; transition: filter 0.4s, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.sp__lockup:hover .sp__mark { filter: drop-shadow(0 0 22px rgba(198, 255, 46, 0.35)) saturate(1.15); transform: translateY(-3px) rotate(-2deg); }
+.sp__word { flex: 1 1 auto; min-width: 0; width: min(100%, 560px); height: auto; aspect-ratio: 847 / 217; fill: var(--text); }
+.sp__kicker { margin: 0 0 0 2px; font-size: 9.5px; color: var(--text-3); }
+.sp__lead { margin: 0; max-width: 34ch; font-size: clamp(17px, 1.5vw, 22px); line-height: 1.34; font-weight: 500; letter-spacing: -0.015em; text-shadow: 0 1px 12px #050605; }
 .sp__cta { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/* The collage: the live preview in front on the left, the tiles behind it to the
+   right. --mx / --my follow the pointer (-1..1); nearer cards (--d) move more. */
+.sp__collage { position: relative; width: min(100%, 95vh); aspect-ratio: 1 / 0.82; justify-self: center; --mx: 0; --my: 0; }
+.sp__card {
+  position: absolute; --d: 1;
+  translate: calc(var(--mx) * var(--d) * 16px) calc(var(--my) * var(--d) * 12px);
+  transition: translate 0.2s linear, scale 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.45s, box-shadow 0.45s;
+  animation: bob 7s ease-in-out infinite; animation-delay: calc(var(--i) * -1.4s);
+  box-shadow: 0 26px 50px -20px rgba(0, 0, 0, 0.85);
+}
+.sp__card .tile, .sp__card .hero { width: 100%; height: auto; aspect-ratio: 4 / 5; }
+.sp__card .tile { border-color: var(--line-2); }
+.sp__card--hero { left: 0; top: 7%; width: 50%; z-index: 5; rotate: -2.5deg; --d: 1.6; }
+.sp__card--hero .hero { border: 0; box-shadow: 0 0 0 1px rgba(198, 255, 46, 0.5); }
+.sp__card--t0 { left: 39%; top: 0; width: 30%; z-index: 3; rotate: 3deg; --d: 0.7; }
+.sp__card--t1 { left: 70%; top: 7%; width: 29%; z-index: 2; rotate: -2deg; --d: 0.45; }
+.sp__card--t2 { left: 43%; top: 47%; width: 30%; z-index: 4; rotate: -3.5deg; --d: 0.9; }
+.sp__card--t3 { left: 71%; top: 53%; width: 28%; z-index: 1; rotate: 2.5deg; --d: 0.35; }
+.sp__card:hover { scale: 1.06; z-index: 9; filter: brightness(1.06); box-shadow: 0 30px 60px -18px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--accent), 0 0 34px -6px rgba(198, 255, 46, 0.45); }
+.sp__sticker {
+  position: absolute; z-index: 3; left: -30px; top: 16%; width: 70px; height: 70px; display: grid; place-items: center; text-align: center;
+  border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 8.5px; font-weight: 700; line-height: 1.3;
+  rotate: -14deg; animation: spin 14s linear infinite;
+}
+@keyframes bob { 50% { transform: translateY(-9px); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .sp__foot { background: rgba(11, 12, 11, 0.92); color: var(--text); border-top: 1px solid var(--line); padding-bottom: var(--safe-b); backdrop-filter: blur(8px); }
-.sp__tiles { display: flex; gap: 8px; padding: 12px calc(clamp(16px, 2.6vw, 36px) + var(--safe-r)) 0 calc(clamp(16px, 2.6vw, 36px) + var(--safe-l)); overflow-x: auto; scrollbar-width: none; }
-.sp__tiles::-webkit-scrollbar { display: none; }
-.sp__tiles .tile { flex: 0 0 auto; height: clamp(84px, 13vh, 132px); border-color: var(--line); }
-.sp__tiles .tile figcaption { font-size: 8.5px; padding: 4px 6px; }
-.sp__base { display: flex; justify-content: space-between; gap: 16px; padding: 10px calc(clamp(16px, 2.6vw, 36px) + var(--safe-r)) 10px calc(clamp(16px, 2.6vw, 36px) + var(--safe-l)); }
+.sp__base { display: flex; justify-content: space-between; gap: 16px; padding: 9px calc(clamp(16px, 2.6vw, 36px) + var(--safe-r)) 9px calc(clamp(16px, 2.6vw, 36px) + var(--safe-l)); }
 .sp__fine { margin: 0; color: var(--text-3); font-size: 9px; }
 .ticker { overflow: hidden; border-top: 1px solid var(--line); padding: 9px 0; }
 .ticker__track { display: flex; width: max-content; animation: tick 90s linear infinite; }
@@ -133,64 +143,57 @@
 .ticker__track i { font-style: normal; color: var(--accent); margin: 0 14px; }
 @keyframes tick { to { transform: translateX(-50%); } }
 
-/* The opening: the dots fill the page, then the type and the object arrive. */
-/* The bar (with Skip Intro) stays over the opening; the rest waits for it. */
+/* The opening: the bar (with Skip Intro) stays over it; the rest waits. */
 .sp--intro .sp__main, .sp--intro .sp__foot { visibility: hidden; }
-.sp--ready .sp__logo { animation: lift 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.sp--ready .sp__swash path { animation: draw 1.3s 0.35s cubic-bezier(0.6, 0, 0.3, 1) both; }
-.sp--ready .sp__kicker, .sp--ready .sp__copy > * { animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.sp--ready .sp__kicker { animation-delay: 0.3s; }
-.sp--ready .sp__copy > :nth-child(1) { animation-delay: 0.4s; }
-.sp--ready .sp__copy > :nth-child(2) { animation-delay: 0.5s; }
-.sp--ready .sp__object .hero { animation: drop 0.9s 0.25s cubic-bezier(0.2, 0.9, 0.25, 1.15) both; }
+.sp--ready .sp__mark { animation: lift 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.sp--ready .sp__word { animation: lift 0.9s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.sp--ready .sp__kicker, .sp--ready .sp__lead, .sp--ready .sp__cta { animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.sp--ready .sp__kicker { animation-delay: 0.25s; }
+.sp--ready .sp__lead { animation-delay: 0.35s; }
+.sp--ready .sp__cta { animation-delay: 0.45s; }
+.sp--ready .sp__card { animation: deal 0.8s calc(0.2s + var(--i) * 0.08s) cubic-bezier(0.2, 0.9, 0.25, 1.1) both, bob 7s calc(1.2s + var(--i) * -1.4s) ease-in-out infinite; }
 .sp--ready .sp__foot { animation: up 0.7s 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.sp--ready .sp__tiles .tile { animation: rise 0.6s calc(0.6s + var(--i) * 0.06s) both; }
 @keyframes lift { from { clip-path: inset(100% 0 0 0); translate: 0 30%; } to { clip-path: inset(-10% 0 -10% 0); translate: 0 0; } }
-@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
-@keyframes drop { from { opacity: 0; translate: 0 -60px; rotate: -8deg; } to { opacity: 1; translate: 0 0; rotate: 0deg; } }
+@keyframes deal { from { opacity: 0; transform: translate(40px, 60px) rotate(8deg) scale(0.92); } to { opacity: 1; transform: none; } }
 @keyframes up { from { translate: 0 100%; } to { translate: 0 0; } }
 
-/* Tablets: the object moves beside the text instead of over a smaller wordmark. */
+/* Tablets: copy above, collage below. */
 @media (max-width: 1100px) and (min-width: 761px) {
-  .sp__logo { width: min(66vw, 70vh); }
-  .sp__object { height: min(56%, 440px); top: auto; bottom: 4%; }
-  .sp__copy { max-width: 52vw; }
+  .sp__main { grid-template-columns: minmax(0, 1fr); align-content: center; overflow-y: auto; }
+  .sp__collage { width: min(86%, 560px); }
 }
-/* Phones: one column that scrolls; the object overlaps the wordmark's foot. */
+/* Phones: one column that scrolls; the collage sits between the logo and the copy. */
 @media (max-width: 760px) {
   .sp__bar { grid-template-columns: auto 1fr; padding: calc(10px + var(--safe-t)) calc(14px + var(--safe-r)) 8px calc(14px + var(--safe-l)); }
   .sp__badge { display: none; }
   .sp__hide-sm { display: none; }
   .sp { overflow-y: auto; }
   .sp__dots { position: fixed; }
-  .sp__main { flex: none; justify-content: flex-start; gap: 18px; padding: 8px calc(16px + var(--safe-r)) 22px calc(16px + var(--safe-l)); }
-  .sp__word { display: block; }
-  .sp__logo { width: 100%; }
-  .sp__swash { left: 30%; width: 70%; top: 82%; height: 34%; }
-  .sp__object { position: relative; right: auto; top: auto; height: auto; width: min(68%, 300px); margin: -2px 0 0 auto; rotate: 3deg; }
-  .sp__sticker { width: 62px; height: 62px; left: -30px; font-size: 8px; }
-  .sp__copy { max-width: none; gap: 14px; }
-  .sp__lead { font-size: 17px; }
-  .sp__cta { flex-direction: column; }
+  .sp__main { flex: none; display: flex; flex-direction: column; align-items: stretch; gap: 16px; padding: 8px calc(16px + var(--safe-r)) 22px calc(16px + var(--safe-l)); }
+  .sp__main > * { flex-shrink: 0; }
+  .sp__copy { display: contents; }
+  .sp__lockup { order: 1; }
+  .sp__kicker { order: 2; }
+  .sp__collage { order: 3; width: 100%; margin: 6px 0 4px; }
+  .sp__lead { order: 4; font-size: 17px; }
+  .sp__cta { order: 5; flex-direction: column; }
   .sp__cta .pill { width: 100%; }
-  .sp__tiles { padding-top: 10px; }
-  .sp__tiles .tile { height: 96px; }
+  .sp__mark { width: 34vw; }
+  .sp__sticker { width: 54px; height: 54px; left: -14px; font-size: 7px; }
   .sp__base { padding: 8px 16px; }
   .ticker { padding: 7px 0; }
   .ticker__track span { font-size: 12px; }
 }
 /* Short landscape phones: everything scrolls in one column too. */
 @media (max-height: 540px) and (orientation: landscape) {
-  .sp__main { overflow-y: auto; justify-content: flex-start; }
-  .sp__logo { width: min(48vw, 110vh); }
-  .sp__object { height: 78%; top: 4%; }
-  .sp__tiles { display: none; }
+  .sp__main { overflow-y: auto; align-items: start; }
+  .sp__collage { width: min(100%, 110vh); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sp__object, .sp__sticker, .ticker__track { animation: none; }
-  .sp__logo, .sp__logo:hover { transition: none; transform: none; }
-  .sp--ready .sp__logo, .sp--ready .sp__swash path, .sp--ready .sp__kicker, .sp--ready .sp__copy > *, .sp--ready .sp__object .hero, .sp--ready .sp__foot, .sp--ready .sp__tiles .tile { animation: none; }
+  .sp__card, .sp__sticker, .ticker__track { animation: none; }
+  .sp__mark, .sp__lockup:hover .sp__mark { transition: none; transform: none; }
+  .sp--ready .sp__mark, .sp--ready .sp__word, .sp--ready .sp__kicker, .sp--ready .sp__lead, .sp--ready .sp__cta, .sp--ready .sp__card, .sp--ready .sp__foot { animation: none; }
 }
 /* ── Log in / Sign up ───────────────────────────────────────── */
 .auth__main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 480px); overflow: auto; }
@@ -320,9 +323,9 @@
 }
 body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .mhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: calc(6px + var(--safe-t)) 10px 6px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
-.mhead__brand { display: flex; align-items: center; gap: 10px; min-width: 0; height: 44px; padding: 0 6px; background: transparent; border: 0; color: var(--text); cursor: pointer; }
+.mhead__brand { display: flex; align-items: center; gap: 10px; min-width: 0; height: 44px; padding: 0 6px; color: var(--text); }
 .mhead__brand .wordmark { height: 22px; }
-.mhead__ws { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 999px; color: var(--text-2); font-size: 9.5px; white-space: nowrap; }
+.mhead__ws { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 12px; background: transparent; border: 1px solid var(--line-2); border-radius: 999px; color: var(--text-2); font-size: 9.5px; white-space: nowrap; cursor: pointer; }
 .mhead__actions { display: flex; align-items: center; gap: 4px; }
 .mhead__actions .btn { height: 40px; min-width: 40px; }
 .mhead__actions .acct__me { width: 40px; height: 40px; }
@@ -503,3 +506,64 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .hero__types span.on { background: var(--accent); color: var(--accent-ink); }
 .livefx--wait { background: repeating-linear-gradient(-45deg, var(--bg-2) 0 8px, var(--bg-1) 8px 16px); }
 @media (max-width: 760px) { .hero__types { top: auto; bottom: 44px; right: 8px; } }
+
+/* The AirFx cursor: the white A, on the public pages only (intro, log-in,
+   About / information) and only with a real mouse. The editor keeps the
+   normal cursors; text fields keep the text cursor; touch screens are unchanged.
+   The hotspot is the top of the A. */
+@media (hover: hover) and (pointer: fine) {
+  .sp, .sp *, .auth, .auth *, .ab, .ab * {
+    cursor: url('/cursor/a-white.png') 12 4, auto;
+    cursor: image-set(url('/cursor/a-white.png') 1x, url('/cursor/a-white@2x.png') 2x) 12 4, auto;
+  }
+  .sp input, .auth input, .ab input, .auth textarea, .ab textarea, .ab [contenteditable] { cursor: text; }
+  .sp :disabled, .auth :disabled, .ab :disabled { cursor: not-allowed; }
+}
+
+/* ── Information page motion (from the editorial reference) ─────
+   --p runs 0 → 1 as an element scrolls through the screen; --bump peaks
+   at 1 in the middle. Set by About.tsx; still under reduced motion. */
+.ab { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+.ab__scroll { overflow-x: hidden; }
+.ab__hero { min-height: min(74vh, 720px); display: flex; flex-direction: column; justify-content: flex-end; border-bottom: 0; }
+/* Big uppercase lines that rise in on open, then lift away as you scroll. */
+.ab__statement { max-width: none; font-size: clamp(40px, 8vw, 132px); line-height: 0.9; letter-spacing: -0.05em; text-transform: uppercase; translate: 0 calc(var(--x, 0) * -140px); opacity: calc(1 - var(--x, 0) * 1.4); }
+.ab__line { display: block; overflow: hidden; padding-bottom: 0.05em; }
+.ab__line > span { display: inline-block; animation: ab-line 1s calc(0.12s + var(--k) * 0.09s) cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes ab-line { from { transform: translateY(108%); } }
+.ab__meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-top: clamp(24px, 4vw, 48px); padding-top: 10px; border-top: 1px solid var(--line); color: var(--text-3); animation: rise 0.8s 0.55s both; }
+/* The picture band: grows towards full width through the middle of the screen. */
+.ab__band { position: relative; padding: 0 calc(clamp(16px, 3vw, 40px) + var(--safe-r)) 0 calc(clamp(16px, 3vw, 40px) + var(--safe-l)); margin: clamp(10px, 2vw, 24px) 0 clamp(36px, 6vw, 80px); }
+.ab__band .ab__strip { margin-top: 0; scale: calc(0.84 + 0.16 * var(--bump, 0)); }
+.ab__band .ab__strip > * { border-radius: calc((1 - var(--bump, 0)) * 14px); overflow: hidden; }
+.ab__ring { position: absolute; z-index: 2; right: clamp(20px, 7vw, 110px); top: clamp(-70px, -5vw, -36px); width: clamp(84px, 10vw, 150px); rotate: calc(var(--p, 0) * 240deg); }
+.ab__ring circle { fill: var(--accent); }
+.ab__ring text { font: 700 14px var(--mono); letter-spacing: 0.14em; fill: var(--accent-ink); }
+/* Sections slide in, part by part. */
+.ab__reveal > * { opacity: 0; translate: 0 36px; transition: opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1), translate 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.ab__reveal > :nth-child(2) { transition-delay: 0.06s; }
+.ab__reveal > :nth-child(3) { transition-delay: 0.12s; }
+.ab__reveal > :nth-child(4) { transition-delay: 0.2s; }
+.ab__reveal.is-in > * { opacity: 1; translate: 0 0; }
+/* Created By: MIKAIR arrives huge and cropped, settling to fit; the name sits smaller beneath. */
+.ab__sec--wide { overflow: clip; }
+.ab__sec--wide .ab__body { max-width: none; }
+.ab__giant { position: relative; margin-bottom: 20px; }
+.ab__by { color: var(--accent); margin: 0 0 8px !important; }
+.ab__alias { position: relative; z-index: 1; margin: 0 !important; font-size: clamp(72px, 15vw, 250px) !important; font-weight: 800; line-height: 0.84 !important; letter-spacing: -0.065em; text-transform: uppercase; transform-origin: left bottom; scale: calc(1.5 - 0.5 * min(1, var(--p, 1) * 2.4)); }
+.ab__giant .ab__name { position: relative; z-index: 1; font-size: clamp(22px, 2.6vw, 38px) !important; letter-spacing: -0.02em; margin: 14px 0 0 !important; color: var(--text); }
+.ab__spark { position: absolute; z-index: 0; fill: var(--accent); width: clamp(40px, 6vw, 96px); translate: 0 calc((0.5 - var(--p, 0.5)) * 140px); animation: ab-twinkle 5.5s ease-in-out infinite; }
+.ab__spark--0 { right: 6%; top: -6%; }
+.ab__spark--1 { right: 28%; bottom: 4%; width: clamp(28px, 3.6vw, 60px); animation-delay: -2s; }
+.ab__spark--2 { left: 48%; top: -14%; width: clamp(22px, 2.6vw, 44px); animation-delay: -3.6s; }
+@keyframes ab-twinkle { 50% { rotate: 45deg; scale: 0.78; } }
+.ab--still .ab__reveal > * { opacity: 1; translate: none; transition: none; }
+.ab--still .ab__statement, .ab--still .ab__band .ab__strip, .ab--still .ab__alias, .ab--still .ab__spark, .ab--still .ab__ring { translate: none; scale: none; rotate: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .ab__line > span, .ab__meta, .ab__spark { animation: none; } }
+@media (max-width: 760px) {
+  .ab__hero { min-height: 62vh; }
+  .ab__statement { font-size: clamp(36px, 11.5vw, 56px); }
+  .ab__band .ab__strip { scale: calc(0.92 + 0.08 * var(--bump, 0)); }
+  .ab__ring { top: -34px; right: 18px; width: 76px; }
+  .ab__alias { font-size: 21vw !important; }
+}

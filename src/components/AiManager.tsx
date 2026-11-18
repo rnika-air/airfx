@@ -15,7 +15,7 @@ export function AiManager({ onClose }: { onClose: () => void }) {
   useEffect(() => { refresh(); }, [ai.workerStatus, ai.lastError]);
   const clear = async (k: ModelKey) => { await ai.clearCache(k); setNote(`Removed ${MODELS[k].label} from this browser.`); refresh(); };
   const rows: [string, string, boolean?][] = d ? [
-    ['AI Worker', WORKER[d.worker], d.worker !== 'failed'],
+    ['Air Worker', WORKER[d.worker], d.worker !== 'failed'],
     ['Local Server', d.server ? 'Reachable' : 'Not reachable', d.server],
     ['Transformers.js', d.runtime?.transformers || 'Known once the worker starts'],
     ['ONNX Runtime', d.runtime?.ort || 'Known once the worker starts'],
@@ -28,7 +28,7 @@ export function AiManager({ onClose }: { onClose: () => void }) {
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="ai-title">
         <div className="modal__head">
-          <h2 id="ai-title" className="panel-title">AI Models</h2>
+          <h2 id="ai-title" className="panel-title">Air Models</h2>
           <button className="btn btn--icon btn--sm" onClick={onClose} aria-label="Close (Esc)">×</button>
         </div>
         <label className="ctl ctl--inline"><span className="label">Use CPU Only</span><input type="checkbox" checked={ai.cpuOnly} onChange={(e) => ai.setCpuOnly(e.target.checked)} /></label>
@@ -44,7 +44,7 @@ export function AiManager({ onClose }: { onClose: () => void }) {
         </div>
         {note && <p className="small ok">{note}</p>}
         <details className="diag" open={ai.workerStatus === 'failed' || undefined}>
-          <summary className="label">AI Diagnostics</summary>
+          <summary className="label">Air Diagnostics</summary>
           <dl className="diag__list">
             {rows.map(([k, v, good]) => <div key={k}><dt>{k}</dt><dd className={good === false ? 'error' : undefined}>{v}</dd></div>)}
           </dl>

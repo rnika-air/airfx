@@ -1,6 +1,39 @@
 import type { EffectDefinition } from './types';
 import { BLEND_OPTIONS, blendChannel, hexToRgb, luminance, type BlendMode } from '../utils/imageProcessing';
 import { KEEP_BRIGHTNESS, matchBrightness } from './tone';
+import { GLSL_COMMON, gpuEffect } from '../engine/gpu';
+
+/** The moiré loop in render(), per pixel. */
+const MOIRE_GLSL = GLSL_COMMON + `
+uniform sampler2D u_tex0; uniform float u_pat, u_k, u_k2, u_infl, u_drift, u_waver, u_wf, u_rays, u_a1, u_duty, u_contrast, u_int, u_blend, u_opacity;
+uniform vec4 u_ang; uniform vec2 u_d; uniform bool u_invert; uniform vec3 u_col1, u_col2;
+float shape(float v) { return clamp(((v + u_duty) * 0.5 * u_contrast) + 0.5, 0.0, 1.0); }
+float blendc(float base, float top) {
+  int m = int(u_blend);
+  if (m == 1) return base * top / 255.0;
+  if (m == 2) return 255.0 - (255.0 - base) * (255.0 - top) / 255.0;
+  if (m == 3) return base < 128.0 ? 2.0 * base * top / 255.0 : 255.0 - 2.0 * (255.0 - base) * (255.0 - top) / 255.0;
+  if (m == 4) return abs(base - top);
+  if (m == 5) return min(255.0, base + top);
+  return top;
+}
+void main() {
+  ivec2 p = px(); vec4 s = texelFetch(u_tex0, p, 0) * 255.0;
+  float py = float(p.y) - u_size.y / 2.0;
+  float phase = (0.2126 * s.r + 0.7152 * s.g + 0.0722 * s.b) / 255.0 * u_infl + u_drift;
+  float qx = float(p.x) - u_size.x / 2.0 + (u_waver != 0.0 ? sin(py * u_wf) * u_waver : 0.0);
+  float g1, g2; int pat = int(u_pat);
+  if (pat == 0) { g1 = sin(u_k * (qx * u_ang.x + py * u_ang.y) + phase); g2 = sin(u_k2 * (qx * u_ang.z + py * u_ang.w) + phase * 0.5); }
+  else if (pat == 1) { g1 = sin(u_k * length(vec2(qx + u_d.x / 2.0, py + u_d.y / 2.0)) + phase); g2 = sin(u_k2 * length(vec2(qx - u_d.x / 2.0, py - u_d.y / 2.0)) + phase * 0.5); }
+  else if (pat == 2) { g1 = sin(u_rays * atan(py + u_d.y / 2.0, qx + u_d.x / 2.0) + u_a1 + phase); g2 = sin(u_rays * atan(py - u_d.y / 2.0, qx - u_d.x / 2.0) + u_a1 + phase * 0.5); }
+  else { g1 = sin(u_k * (qx * u_ang.x + py * u_ang.y) + phase); g2 = sin(u_k2 * length(vec2(qx - u_d.x, py - u_d.y)) + phase * 0.5); }
+  float q = shape(g1) * shape(g2);
+  if (u_invert) q = 1.0 - q;
+  vec3 t = u_col1 + (u_col2 - u_col1) * q;
+  vec3 b = vec3(blendc(s.r, t.r), blendc(s.g, t.g), blendc(s.b, t.b));
+  vec3 mixed = s.rgb + (b - s.rgb) * u_int;
+  outColor = vec4(clamp(t + (mixed - t) * u_opacity, 0.0, 255.0) / 255.0, 1.0);
+}`;
 
 /**
  * Moiré: two algorithmic gratings are overlaid like printed transparencies
@@ -91,7 +124,8 @@ export const moire: EffectDefinition = {
       visibleWhen: (v) => v.animate === true,
     },
   ],
-  render({ src, ctx, width, height, params, unit, time }) {
+  render(input) {
+    const { ctx, width, height, params, unit, time } = input;
     const pattern = params.pattern as string;
     const k = (Math.PI * 2 * (params.frequency as number)) / (100 * (params.scale as number) * unit);
     const a1 = ((params.angle as number) * Math.PI) / 180;
@@ -123,6 +157,22 @@ export const moire: EffectDefinition = {
       return s < 0 ? 0 : s > 1 ? 1 : s;
     };
 
+    // On the GPU when it can (the same maths, per pixel); otherwise the loop below.
+    const PAT: Record<string, number> = { lines: 0, circles: 1, radial: 2 }, BL: Record<string, number> = { normal: 0, multiply: 1, screen: 2, overlay: 3, difference: 4, add: 5 };
+    if (gpuEffect(MOIRE_GLSL, input.srcCanvas, ctx, width, height, {
+      u_pat: PAT[pattern] ?? 3, u_k: k, u_k2: k2, u_ang: [c1, s1, c2, s2], u_d: [dx, dy], u_infl: influence, u_drift: drift, u_waver: waver, u_wf: wf,
+      u_rays: raysK, u_a1: a1, u_duty: duty, u_contrast: contrast, u_int: intensity, u_blend: BL[blend] ?? 0, u_invert: invert,
+      u_col1: col1, u_col2: col2, u_opacity: opacity,
+    })) {
+      if (params.keepBrightness) {
+        // Keep Brightness needs the averages of both pictures, so this one step reads back.
+        const out = ctx.getImageData(0, 0, width, height);
+        matchBrightness(out, input.src);
+        ctx.putImageData(out, 0, 0);
+      }
+      return;
+    }
+    const src = input.src;
     const sp = src.data;
     const out = ctx.createImageData(width, height);
     const op = out.data;

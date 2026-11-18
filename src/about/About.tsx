@@ -6,9 +6,16 @@ import { LiveFx, TYPE_NAME } from '../intro/LiveFx';
 import { CONTACT, COPYRIGHT_YEAR, CREATOR, INTRO_TEXT } from './config';
 
 /**
- * About AirFx: an editorial information page. Desktop keeps the reference's
- * columns (number, section label, text, side notes); phones stack the
- * sections, with a section index that stays at the top.
+ * About AirFx: an editorial information page. Desktop keeps the columns
+ * (number, section label, text, side notes); phones stack the sections, with
+ * a section index that stays at the top.
+ *
+ * Motion, as you scroll: the headline lines rise in and lift away, the
+ * picture band grows towards full width as it crosses the middle of the
+ * screen and shrinks as it leaves, section text slides in, and the creator's
+ * name arrives huge and cropped, settling to fit, with lime sparkles. Every
+ * section and every word of information stays; only the presentation moves.
+ * Reduced motion shows it all still.
  */
 
 const SECTIONS = [
@@ -33,9 +40,9 @@ const FEATURES: [string, string][] = [
 
 const TOPICS = ['Feedback', 'Bug Reports', 'Collaborations', 'Feature Suggestions'];
 
-function Section({ n, id, label, children, aside }: { n: number; id: string; label: string; children: React.ReactNode; aside?: React.ReactNode }) {
+function Section({ n, id, label, children, aside, wide }: { n: number; id: string; label: string; children: React.ReactNode; aside?: React.ReactNode; wide?: boolean }) {
   return (
-    <section className="ab__sec" id={`ab-${id}`} aria-labelledby={`ab-${id}-h`}>
+    <section className={`ab__sec ab__reveal${wide ? ' ab__sec--wide' : ''}`} id={`ab-${id}`} aria-labelledby={`ab-${id}-h`}>
       <span className="ab__n">{String(n).padStart(2, '0')}</span>
       <h2 className="ab__label" id={`ab-${id}-h`}>{label}</h2>
       <div className="ab__body">{children}</div>
@@ -65,6 +72,33 @@ export function About({ onClose }: { onClose: () => void }) {
     root.querySelectorAll('.ab__sec').forEach((s) => io.observe(s));
     return () => io.disconnect();
   }, []);
+  // Each [data-p] element gets --p: 0 as it enters from below, 1 as it leaves at the top
+  // (--bump peaks in the middle; --x is how far it has left at the top). Sections reveal once, as they come in.
+  useEffect(() => {
+    const root = scroller.current;
+    if (!root) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { root.classList.add('ab--still'); return; }
+    const items = [...root.querySelectorAll<HTMLElement>('[data-p]')];
+    const update = () => {
+      const vh = root.clientHeight, top = root.getBoundingClientRect().top;
+      for (const el of items) {
+        const b = el.getBoundingClientRect();
+        const p = Math.min(1, Math.max(0, (vh - (b.top - top)) / (vh + b.height)));
+        el.style.setProperty('--p', p.toFixed(4));
+        el.style.setProperty('--bump', Math.sin(p * Math.PI).toFixed(4));
+        // --x: how far it has scrolled out at the top (0 while its top is on screen).
+        el.style.setProperty('--x', Math.min(1, Math.max(0, -(b.top - top) / Math.max(1, b.height))).toFixed(4));
+      }
+    };
+    // A handful of elements: cheap enough to update on every scroll event, so it never lags a frame.
+    const onScroll = () => update();
+    update();
+    root.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }), { root, rootMargin: '0px 0px -12% 0px' });
+    root.querySelectorAll('.ab__reveal').forEach((x) => io.observe(x));
+    return () => { root.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); io.disconnect(); };
+  }, []);
   const jump = (id: string) => scroller.current?.querySelector(`#ab-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const mail = (topic: string) => `mailto:${CONTACT.email}?subject=${encodeURIComponent(`AirFx: ${topic}`)}`;
 
@@ -81,13 +115,19 @@ export function About({ onClose }: { onClose: () => void }) {
         ))}
       </nav>
       <div className="ab__scroll" ref={scroller}>
-        <div className="ab__hero">
+        <div className="ab__hero" data-p>
           <p className="ab__kicker mono">(About AirFx)</p>
-          <p className="ab__statement">An experimental visual playground for images, video, motion and sound.</p>
-          <div className="ab__strip" aria-hidden>
+          <p className="ab__statement">
+            {['An experimental', 'visual playground', 'for images, video,', 'motion and sound.'].map((l, i) => <span key={l} className="ab__line" style={{ ['--k' as string]: i }}><span>{l}</span></span>)}
+          </p>
+          <div className="ab__meta mono" aria-hidden><span>Images · Video</span><span>Motion · Sound</span><span>{LIBRARY.filter((e) => e.category !== 'adjust').length} Effects</span><span>Made in {CREATOR.from}</span></div>
+        </div>
+        <div className="ab__band" data-p aria-hidden>
+          <div className="ab__strip">
             <LiveFx className="ab__live" offset={4} caption={(s) => <figcaption className="mono">{TYPE_NAME[s.item.type]} · {s.effectName}</figcaption>} />
             {list.slice(0, 5).map((p) => <figure key={p.id}><img src={p.url} alt="" /><figcaption className="mono">{p.name}</figcaption></figure>)}
           </div>
+          <svg className="ab__ring" viewBox="0 0 200 200"><defs><path id="ab-ring" d="M100 100 m-74 0 a74 74 0 1 1 148 0 a74 74 0 1 1 -148 0" /></defs><circle cx="100" cy="100" r="98" /><text><textPath href="#ab-ring">AIRFX · VISUAL PLAYGROUND · AIRFX · VISUAL PLAYGROUND · </textPath></text></svg>
         </div>
 
         <Section n={1} id="about" label="About" aside={<p className="mono">Independent software<br />Made in Malaysia</p>}>
@@ -105,12 +145,17 @@ export function About({ onClose }: { onClose: () => void }) {
           </ul>
         </Section>
 
-        <Section n={4} id="creator" label="Created By" aside={<p className="mono">{CREATOR.from}</p>}>
-          <p className="ab__name">{CREATOR.name}</p>
+        <Section n={4} id="creator" label="Created By" wide aside={<p className="mono">{CREATOR.from}</p>}>
+          <div className="ab__giant" data-p>
+            <p className="ab__by mono">Created by</p>
+            <p className="ab__alias">{CREATOR.alias}</p>
+            <p className="ab__name">{CREATOR.name}</p>
+            {[0, 1, 2].map((i) => <svg key={i} className={`ab__spark ab__spark--${i}`} viewBox="0 0 100 100" aria-hidden><path d="M50 0C54 30 70 46 100 50C70 54 54 70 50 100C46 70 30 54 0 50C30 46 46 30 50 0Z" /></svg>)}
+          </div>
           <p className="ab__role">{CREATOR.role}</p>
           <p className="ab__from">From {CREATOR.from}.</p>
           <p className="muted">AirFx is designed, built and maintained independently, as a place to experiment with how images move, break and transform.</p>
-          <p className="ab__credit">Created by {CREATOR.name}, {CREATOR.from}.</p>
+          <p className="ab__credit">Created by {CREATOR.alias} · {CREATOR.name}, {CREATOR.from}.</p>
         </Section>
 
         <Section n={5} id="contact" label="Contact" aside={<p className="mono">Feedback · Bugs<br />Collabs · Ideas</p>}>
@@ -134,10 +179,10 @@ export function About({ onClose }: { onClose: () => void }) {
               <summary>Privacy Policy</summary>
               <p className="muted">The full privacy policy has not been published yet. Until it is, this is how AirFx handles data today:</p>
               <ul>
-                <li>Effects, AI analysis and exports run in your browser. Media you open is not sent to AirFx.</li>
+                <li>Effects, Air analysis and exports run in your browser. Media you open is not sent to AirFx.</li>
                 <li>With an account, AirFx stores your email address, display name, and the projects, presets and media you choose to save. Only your account can read them.</li>
                 <li>When something breaks, the app may send a short error report (the error text and app version, never media or project content).</li>
-                <li>AI models are downloaded from their public hosts the first time you load one, and kept in your browser.</li>
+                <li>Air models are downloaded from their public hosts the first time you load one, and kept in your browser.</li>
               </ul>
             </details>
             <details>
@@ -146,7 +191,7 @@ export function About({ onClose }: { onClose: () => void }) {
             </details>
             <details>
               <summary>Copyright</summary>
-              <p>© {COPYRIGHT_YEAR} {CREATOR.name}. All rights reserved. The AirFx name, wordmark, interface and source code may not be copied or redistributed without permission.</p>
+              <p>© {COPYRIGHT_YEAR} {CREATOR.name} ({CREATOR.alias}). All rights reserved. The AirFx name, wordmark, interface and source code may not be copied or redistributed without permission.</p>
               <p className="muted">The pictures and videos you make with AirFx are yours. The sample photographs are public-domain or CC0 images from Wikimedia Commons, credited in the app.</p>
             </details>
             <details>
@@ -162,7 +207,7 @@ export function About({ onClose }: { onClose: () => void }) {
 
         <footer className="ab__foot">
           <Wordmark size="lg" />
-          <p className="mono">Created by {CREATOR.name}, {CREATOR.from}. · AirFx v{__APP_VERSION__}</p>
+          <p className="mono">Created by {CREATOR.alias} · {CREATOR.name}, {CREATOR.from}. · AirFx v{__APP_VERSION__}</p>
           <button className="pill pill--lime" onClick={onClose}>Back To AirFx</button>
         </footer>
       </div>

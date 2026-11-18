@@ -16,6 +16,8 @@ export const CONTACT = {
 };
 
 export const CREATOR = {
+  /** The creator's working name, shown largest in the credits. */
+  alias: 'MIKAIR',
   name: 'Iman Mikhail',
   role: 'Independent Creative Developer & Motion Designer',
   from: 'Malaysia',

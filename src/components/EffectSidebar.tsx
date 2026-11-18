@@ -18,8 +18,8 @@ interface Props {
 const COMPAT = { both: 'IMG·VID', image: 'IMG', video: 'VID' } as const;
 
 const AI_NOTE: Record<string, string> = {
-  airKey: 'Selection and Auto Matte use AI models. Chroma keying does not.',
-  airCleanup: 'Local and patch fills need no model. AI Reconstruction uses LaMa.',
+  airKey: 'Selection and Auto Matte use Air models. Chroma keying does not.',
+  airCleanup: 'Local and patch fills need no model. Air Reconstruction uses LaMa.',
   airDepth: 'Needs a depth map from Depth Anything, or a map you load.',
 };
 
@@ -34,7 +34,7 @@ function InfoCard({ e, top }: { e: EffectDefinition; top: number }) {
       <dl>
         <dt>Works On</dt><dd>{e.compat === 'video' ? 'Video' : e.compat === 'image' ? 'Images' : 'Images and video'}</dd>
         {keys.length > 0 && <><dt>Key Controls</dt><dd>{keys.join(', ')}</dd></>}
-        <dt>AI Analysis</dt><dd>{AI_NOTE[e.id] ?? 'Not required'}</dd>
+        <dt>Air Analysis</dt><dd>{AI_NOTE[e.id] ?? 'Not required'}</dd>
       </dl>
     </div>
   );

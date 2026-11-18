@@ -21,11 +21,11 @@ export type FailureKind = 'server' | 'worker' | 'download' | 'webgpu' | 'wasm' |
 export type WorkerStatus = 'off' | 'starting' | 'running' | 'failed';
 
 const CPU_KEY = 'airfx.ai.cpuOnly';
-const SERVER_DOWN = "AirFx's local server is not running, so the AI files cannot load. The page stays on screen after the server stops. Double-click Start AirFx.bat (or run npm run dev). The page reloads when it is back. If it does not, press Retry.";
+const SERVER_DOWN = "AirFx's local server is not running, so the Air files cannot load. The page stays on screen after the server stops. Double-click Start AirFx.bat (or run npm run dev). The page reloads when it is back. If it does not, press Retry.";
 
 /** Why the worker script could not start, found by asking for the same files it needs. */
 async function whyNoWorker(eventMessage: string): Promise<{ message: string; kind: FailureKind; retry: boolean }> {
-  if (eventMessage) return { message: `The AI worker crashed while starting: ${eventMessage}`, kind: 'worker', retry: false };
+  if (eventMessage) return { message: `The Air worker crashed while starting: ${eventMessage}`, kind: 'worker', retry: false };
   const noServer = { message: SERVER_DOWN, kind: 'server' as const, retry: false };
   let res: Response;
   try {
@@ -34,26 +34,26 @@ async function whyNoWorker(eventMessage: string): Promise<{ message: string; kin
     return noServer;
   }
   if (res.status === 504) return { message: 'The dev server was rebuilding its files. Press Retry.', kind: 'worker', retry: true };
-  if (!res.ok) return { message: `The server answered ${res.status} for the AI worker file. Press Retry. If it stays, restart AirFx.`, kind: 'worker', retry: false };
-  if (/html/i.test(res.headers.get('content-type') ?? '')) return { message: 'The server sent a web page instead of the AI worker file. AirFx is probably being served by the wrong program. Use Start AirFx.bat, npm run dev or npm run preview.', kind: 'browser', retry: false };
+  if (!res.ok) return { message: `The server answered ${res.status} for the Air worker file. Press Retry. If it stays, restart AirFx.`, kind: 'worker', retry: false };
+  if (/html/i.test(res.headers.get('content-type') ?? '')) return { message: 'The server sent a web page instead of the Air worker file. AirFx is probably being served by the wrong program. Use Start AirFx.bat, npm run dev or npm run preview.', kind: 'browser', retry: false };
   const text = await res.text();
   for (const m of text.matchAll(/from\s+"(\/[^"]+)"/g)) {
     try {
       const dep = await fetch(m[1], { cache: 'no-store' });
       if (dep.status === 504) return { message: 'The dev server was rebuilding its files. Press Retry.', kind: 'worker', retry: true };
-      if (!dep.ok) return { message: `A file the AI worker needs failed to load: ${m[1].split('?')[0]} (HTTP ${dep.status}). Restart AirFx.`, kind: 'worker', retry: false };
+      if (!dep.ok) return { message: `A file the Air worker needs failed to load: ${m[1].split('?')[0]} (HTTP ${dep.status}). Restart AirFx.`, kind: 'worker', retry: false };
     } catch {
       return noServer;
     }
   }
-  return { message: 'The AI worker file downloaded, but the browser refused to run it. A browser extension or security setting may be blocking workers. Try another Chrome or Edge profile.', kind: 'browser', retry: false };
+  return { message: 'The Air worker file downloaded, but the browser refused to run it. A browser extension or security setting may be blocking workers. Try another Chrome or Edge profile.', kind: 'browser', retry: false };
 }
 
 function classify(m: string): { message: string; kind: FailureKind } {
-  if (/no available backend|wasm|WebAssembly/i.test(m)) return { message: 'WebAssembly could not start, so the AI runtime has nothing to run on. Check that the /ort files are being served and use a recent Chrome or Edge.', kind: 'wasm' };
+  if (/no available backend|wasm|WebAssembly/i.test(m)) return { message: 'WebAssembly could not start, so the Air runtime has nothing to run on. Check that the /ort files are being served and use a recent Chrome or Edge.', kind: 'wasm' };
   if (/fetch|network|Failed to load|Could not locate|Unauthorized|\b40[0-9]\b|\b50[0-9]\b/i.test(m)) return { message: 'The model could not be downloaded. Check your connection, then press Retry.', kind: 'download' };
   if (/out of memory|bad_alloc|Aborted|memory/i.test(m)) return { message: 'There was not enough memory for this model. Close other tabs, or use a lighter model.', kind: 'memory' };
-  if (/webgpu|GPU|Device/i.test(m)) return { message: 'WebGPU failed and CPU could not take over. Press Retry, or turn on Use CPU Only in AI Models.', kind: 'webgpu' };
+  if (/webgpu|GPU|Device/i.test(m)) return { message: 'WebGPU failed and CPU could not take over. Press Retry, or turn on Use CPU Only in Air Models.', kind: 'webgpu' };
   return { message: 'The model failed to load.', kind: 'model' };
 }
 
@@ -142,9 +142,9 @@ class AiClient {
     w.onerror = (e) => {
       e.preventDefault();
       w.terminate();
-      this.lost(`The AI worker crashed: ${e.message || 'no reason given by the browser, often running out of memory'}.`);
+      this.lost(`The Air worker crashed: ${e.message || 'no reason given by the browser, often running out of memory'}.`);
     };
-    w.onmessageerror = () => this.lost('The AI worker sent a message the app could not read.');
+    w.onmessageerror = () => this.lost('The Air worker sent a message the app could not read.');
   }
 
   /** Starts the single worker and waits until it says it is really running. */
@@ -156,7 +156,7 @@ class AiClient {
       const w = new Worker(workerUrl, { type: 'module', name: 'airfx-ai' });
       const timer = setTimeout(() => {
         w.terminate();
-        reject(Object.assign(new Error('The AI worker loaded but did not answer within 45 seconds. Press Retry.'), { kind: 'worker' }));
+        reject(Object.assign(new Error('The Air worker loaded but did not answer within 45 seconds. Press Retry.'), { kind: 'worker' }));
       }, 45000);
       w.onerror = async (e) => {
         e.preventDefault();

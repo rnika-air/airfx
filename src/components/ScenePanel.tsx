@@ -121,7 +121,7 @@ export function ScenePanel({ media, fx, trial, setTrial, getTime }: Props) {
 
       <fieldset className="group">
         <legend className="group__title">Deeper Analysis</legend>
-        <p className="small muted">These use AI models, so they run only when you ask. Depth comes from AirFx Depth.</p>
+        <p className="small muted">These use Air models, so they run only when you ask. Depth comes from AirFx Depth.</p>
         <ModelCard model="detect" />
         <button className="btn btn--sm btn--block" disabled={!detectReady || !!job.busy} onClick={detectObjects}>Detect People &amp; Objects</button>
         <ModelCard model="scene" />

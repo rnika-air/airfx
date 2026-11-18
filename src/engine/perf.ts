@@ -52,5 +52,5 @@ export async function detectAcceleration() {
   let gpu = false;
   try { gpu = !!(await (navigator as unknown as { gpu?: { requestAdapter(): Promise<unknown> } }).gpu?.requestAdapter()); } catch { /* none */ }
   const encoder = typeof VideoEncoder !== 'undefined';
-  perf.acceleration = `Effects: CPU · AI: ${gpu ? 'WebGPU' : 'CPU'} · Video encode: ${encoder ? 'WebCodecs' : 'none'}${gl ? ' · WebGL2 ready' : ''}`;
+  perf.acceleration = `Effects: ${gl ? 'CPU + WebGL2 (CRT, Moiré, Film Grain, Chromatic Aberration)' : 'CPU'} · Air: ${gpu ? 'WebGPU' : 'CPU'} · Video encode: ${encoder ? 'WebCodecs' : 'none'}`;
 }

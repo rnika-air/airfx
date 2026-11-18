@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { GLSL_COMMON, gpu } from '../engine/gpu';
 
 /**
  * The splash background, and its opening.
@@ -90,21 +91,72 @@ function drawField(g: CanvasRenderingContext2D, sc: OpeningScratch, w: number, h
   g.restore();
 }
 
+/** The same field on the GPU, at full device resolution: sharp edges on any screen. */
+const OPENING_GLSL = GLSL_COMMON + `
+uniform float u_dpr, u_s, u_sa, u_sb, u_R, u_mode, u_p, u_fill, u_q, u_rim, u_alpha, u_rest;
+float radius(float dn) {
+  if (u_mode < 0.5) return u_s * (u_rest * 0.8 + clamp((u_p * 1.7 - dn) / 0.5, 0.0, 1.0) * 0.55 + u_fill * 0.8);
+  return u_s * (1.4 + (u_rest - 1.4) * u_q);
+}
+void main() {
+  ivec2 p = px();
+  vec2 c = (vec2(p) + 0.5) / u_dpr - u_size / u_dpr * 0.5;
+  float ua = (c.x * 0.8 - c.y * 0.6) / u_sa, ub = (c.x * 0.6 + c.y * 0.8) / u_sb;
+  int j0 = int(floor(ub + 0.5));
+  float f = 0.0;
+  for (int dj = -1; dj <= 1; dj++) {
+    int j = j0 + dj; float sh = (j & 1) == 1 ? 0.5 : 0.0;
+    int i0 = int(floor(ua - sh + 0.5));
+    for (int di = -1; di <= 1; di++) {
+      int i = i0 + di; float ca = float(i) + sh, cb = float(j) + ((i & 1) == 1 ? 0.09 : -0.09);
+      float da = (ua - ca) * u_sa, db = (ub - cb) * u_sb;
+      float r = radius(length(vec2(ca * u_sa, cb * u_sb)) / u_R);
+      float q = (da * da + db * db) / (4.0 * r * r);
+      if (q < 1.0) { float u = 1.0 - q; f += u * u * u; }
+    }
+  }
+  float inside = clamp((f - 0.38) / 0.08, 0.0, 1.0);
+  vec3 col = vec3(5.0, 6.0, 5.0); float a = 0.0;
+  if (inside > 0.0) { col = vec3(198.0, 255.0, 46.0); a = inside; }
+  if (u_rim > 0.0 && inside < 1.0 && f > 0.12) {
+    bool outer = f < 0.25;
+    vec3 rc = outer ? vec3(255.0, 62.0, 165.0) : vec3(54.0, 214.0, 255.0);
+    float ra = u_rim * (outer ? smoothstep(0.0, 1.0, (f - 0.12) / 0.05) : 1.0) * (1.0 - inside);
+    col = col * (1.0 - ra) + rc * ra; a = max(a, ra);
+  }
+  outColor = vec4(col / 255.0, a * u_alpha);
+}`;
+
+/** The field drawn by the GPU when it can; false when the CPU copy must do it. */
+function fieldGpu(g: CanvasRenderingContext2D, w: number, h: number, dpr: number, u: Record<string, number>) {
+  const dw = Math.max(1, Math.round(w * dpr)), dh = Math.max(1, Math.round(h * dpr));
+  if (!gpu.can(dw, dh)) return false;
+  try {
+    const s = dotStep(w, h);
+    const out = gpu.run(OPENING_GLSL, dw, dh, [], { u_dpr: dpr, u_s: s, u_sa: s * 0.9, u_sb: s * 2.1, u_R: Math.hypot(w / 2, h / 2), u_rest: REST, ...u });
+    if (!out) return false;
+    g.drawImage(out, 0, 0, w, h);
+    return true;
+  } catch { return false; }
+}
+
 /**
  * One frame of the opening at time t (seconds), drawn into g over w × h.
  * Returns false once the opening is over. Pure: the same t always gives the same frame.
  */
-export function paintOpening(g: CanvasRenderingContext2D, sc: OpeningScratch, w: number, h: number, t: number) {
+export function paintOpening(g: CanvasRenderingContext2D, sc: OpeningScratch, w: number, h: number, t: number, dpr = 1) {
   if (t >= DOT_INTRO_SECONDS) return false;
   const s = dotStep(w, h);
   if (t < GROW + HOLD) {
     // Grow out from the middle, then swell until the holes close.
     const p = Math.min(1, t / GROW), fill = smooth((p - 0.6) / 0.4);
+    if (fieldGpu(g, w, h, dpr, { u_mode: 0, u_p: p, u_fill: fill, u_q: 0, u_rim: (1 - fill) * 0.95, u_alpha: 1 })) return true;
     // Radius over the spacing s: 0.35 joins the dots along a band, 0.85 joins the bands, ~1 closes the holes.
     drawField(g, sc, w, h, (dn) => s * (REST * 0.8 + clamp01((p * 1.7 - dn) / 0.5) * 0.55 + fill * 0.8), (1 - fill) * 0.95, 1);
   } else {
     // Break back into dots and shrink to the resting grid.
     const q = smooth((t - GROW - HOLD) / SHRINK);
+    if (fieldGpu(g, w, h, dpr, { u_mode: 1, u_p: 1, u_fill: 0, u_q: q, u_rim: 0, u_alpha: 1 - q * 0.55 })) return true;
     drawField(g, sc, w, h, () => s * (1.4 + (REST - 1.4) * q), 0, 1 - q * 0.55);
   }
   return true;
@@ -195,7 +247,7 @@ export function DotField({ intro, onReveal, onDone }: { intro: boolean; onReveal
       g.clearRect(0, 0, w, h);
       if (opening) {
         if (!revealed && t >= REVEAL_AT) { revealed = true; cb.current.onReveal?.(); }
-        paintOpening(g, sc, w, h, t);
+        paintOpening(g, sc, w, h, t, dpr);
         return;
       }
       if (!done) { done = true; if (!revealed) { revealed = true; cb.current.onReveal?.(); } cb.current.onDone?.(); }

@@ -1,6 +1,19 @@
 import { contentOf, withContent } from '../content/content';
 import type { EffectDefinition, ParamDef, ParamValues } from './types';
 import { boxBlur, createCanvas, createRng, fbm, get2d, hexToRgb, sampleBilinear } from '../utils/imageProcessing';
+import { GLSL_COMMON, gpuEffect } from '../engine/gpu';
+
+/** Chromatic aberration, per pixel: red pushed out, blue pulled in, green and alpha kept. */
+const CHROMA_GLSL = GLSL_COMMON + `
+uniform sampler2D u_tex0; uniform vec2 u_c; uniform float u_amt, u_f, u_R;
+void main() {
+  ivec2 p = px(); float dx = float(p.x) - u_c.x, dy = float(p.y) - u_c.y;
+  float k = pow(length(vec2(dx, dy)) / u_R, u_f) * u_amt;
+  vec4 s = texelFetch(u_tex0, p, 0);
+  float r = bilinear(u_tex0, u_c.x + dx * (1.0 + k), u_c.y + dy * (1.0 + k)).r;
+  float b = bilinear(u_tex0, u_c.x + dx * (1.0 - k), u_c.y + dy * (1.0 - k)).b;
+  outColor = vec4(r / 255.0, s.g, b / 255.0, s.a);
+}`;
 
 /* ───────────── shared controls ───────────── */
 
@@ -276,11 +289,15 @@ export const chromaticAb: EffectDefinition = {
     { key: 'cy', label: 'Center Y', type: 'range', group: 'Lens', min: 0, max: 1, step: 0.005, default: 0.5 },
     { key: 'falloff', label: 'Edge Falloff', type: 'range', group: 'Lens', min: 0.2, max: 4, step: 0.01, default: 1.6 },
   ],
-  render({ src, ctx, width, height, params: p }) {
+  render(input) {
+    const { ctx, width, height, params: p } = input;
     // A fraction of the radius, so the fringe scales with the picture. 0.0516 is the old preview strength.
     const amt = (p.amount as number) * 0.0516;
     const cx = (p.cx as number) * width, cy = (p.cy as number) * height, f = p.falloff as number;
     const R = Math.hypot(width, height) / 2;
+    // On the GPU when it can (the same maths, per pixel); otherwise the loop below.
+    if (gpuEffect(CHROMA_GLSL, input.srcCanvas, ctx, width, height, { u_c: [cx, cy], u_amt: amt, u_f: f, u_R: R })) return;
+    const src = input.src;
     const out = ctx.createImageData(width, height), o = out.data, tmp = new Uint8ClampedArray(4), d = src.data;
     for (let y = 0; y < height; y++)
       for (let x = 0; x < width; x++) {

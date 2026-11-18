@@ -4,6 +4,24 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+### Intro
+- New composition: the original A logo beside the AirFx lettering from the logo artwork as the main wordmark (the hand-drawn swash is gone), and the live preview now overlaps the effect tiles like prints laid on a table, on the right. The cards float gently; moving the pointer over them tilts the layers apart and lifts the card under the pointer.
+- Sharper on high-resolution and 4K screens: the live preview renders at the card's real size in device pixels instead of a fixed 360 × 450 stretched up, the tiles render larger, the dot opening is drawn by the GPU at full screen resolution, the wordmark is vector, the textured A is never shown larger than its own pixels, and text uses crisp antialiasing.
+- A white A cursor on the intro, log-in and information pages (with a mouse; the editor and touch screens keep their usual cursors, text fields keep the text cursor).
+
+### Information page
+- New motion, after an editorial site: the headline lines rise in and lift away as you scroll, the picture band grows towards full width through the middle of the screen, sections slide in, and the creator credit arrives huge and settles to fit, with lime sparkles. All sections and information are unchanged. Still under reduced motion.
+- Created By now reads MIKAIR, with Iman Mikhail beneath.
+
+### Editor
+- Depth Lab moved out of the workspace tabs into a new Experimental menu (and an Experimental group in the phone menu). It works as before; the Depth panel's Open Depth Test Lab button still opens it.
+- AI is now Air throughout the interface: Air Models, Air Status, Air Worker, Air Diagnostics, Air Analysis, Air Reconstruction, error and status messages, and the information page. Model names and files are unchanged.
+- Phone header: the logo and the workspace menu are now separate buttons.
+
+### Faster
+- CRT, Chromatic Aberration, Moiré and Film Grain run on the GPU (WebGL2) when available, with the same maths as before (results match the CPU version to within rounding): 20 to 200 times faster each, in the preview and in exports, at any size the GPU supports. Without WebGL2 they run on the CPU as before.
+- Pixel Sort no longer creates an object for every pixel it sorts.
+- Measured on a 1280 × 720 frame: Pixel Sort + RGB Shift + CRT 280 → 97 ms; Dithering + Glow + Chromatic Aberration + Film Grain + VHS 233 → 113 ms; Halftone + Glow + Chromatic Aberration 140 → 73 ms; CRT + Film Grain + Chromatic Aberration about 290 → 16 ms. The preview turns this into higher resolution and smoother playback automatically; export quality is unchanged.
 
 ## v5.3.1 (2026-11-17)
 ### A new opening

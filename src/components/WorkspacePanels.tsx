@@ -204,7 +204,7 @@ export function KeyPanel(p: WsProps) {
 
         {(mode === 'green' || mode === 'blue' || mode === 'color') && (
           <Field title="Chroma Key">
-            <p className="small muted">A colour key, not AI. It needs an evenly lit screen.</p>
+            <p className="small muted">A colour key, not Air. It needs an evenly lit screen.</p>
             <Tool on={p.tool.kind === 'pick'} onClick={() => p.setTool(p.tool.kind === 'pick' ? { kind: 'none' } : { kind: 'pick' })}>Pick Key Color from Preview</Tool>
             <div className="audio__buttons">
               <Tool on={p.tool.kind === 'hint' && p.tool.value > 0} onClick={() => p.setTool({ kind: 'hint', value: 1 })} title="Paint areas to keep">Keep</Tool>
@@ -435,7 +435,7 @@ export function DepthPanel(p: WsProps) {
       </div>
       <div className="sidebar__scroll">
         <div className={`depthstate ${usingModel ? 'depthstate--ai' : ''}`}>
-          {usingModel ? (tracks.depth.kind === 'file' ? 'DEPTH: LOADED MAP' : 'DEPTH: AI MODEL ESTIMATE') : params.source === 'model' ? 'NO DEPTH MAP YET' : 'DEPTH: PROCEDURAL, NOT AI'}
+          {usingModel ? (tracks.depth.kind === 'file' ? 'DEPTH: LOADED MAP' : 'DEPTH: Air MODEL ESTIMATE') : params.source === 'model' ? 'NO DEPTH MAP YET' : 'DEPTH: PROCEDURAL, NOT Air'}
         </div>
         <div className="depthlegend">
           <span>{params.invertDepth ? 'Near' : 'Far'}</span><i /><span>{params.invertDepth ? 'Far' : 'Near'}</span>

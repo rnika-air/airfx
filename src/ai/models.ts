@@ -62,7 +62,7 @@ export const MODELS: Record<ModelKey, ModelInfo> = {
     note: 'Turns English speech into text on this computer. Used by Speech Typography. Audio never leaves the PC.',
   },
   lama: {
-    key: 'lama', label: 'LaMa (AI inpainting)', task: 'onnx-inpaint', repo: 'opencv/inpainting_lama',
+    key: 'lama', label: 'LaMa (Air inpainting)', task: 'onnx-inpaint', repo: 'opencv/inpainting_lama',
     webgpu: { dtype: 'fp32', mb: 88 }, wasm: { dtype: 'fp32', mb: 88 }, license: 'Apache-2.0', cpuOnly: true,
     note: 'Fills a masked region using only the surrounding image. Takes about 20 seconds on the CPU, in the background. WebGPU returned a broken fill in testing.',
   },

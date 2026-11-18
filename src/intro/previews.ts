@@ -65,7 +65,8 @@ export const showcase = {
 
 /* ── Still tiles ── */
 
-const W = 360, H = 450;
+// Big enough for a tile on a 2× screen (tiles are at most about 260 px wide).
+const W = 540, H = 675;
 const done: Preview[] = [];
 const listeners = new Set<() => void>();
 let started = false;

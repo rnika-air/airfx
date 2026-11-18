@@ -87,7 +87,7 @@ export function JobBar({ job, cancellable = true }: { job: ReturnType<typeof use
   );
 }
 
-const STAGE: Record<LoadStage, string> = { worker: 'Starting AI worker', download: 'Downloading', init: 'Loading model', verify: 'Testing model' };
+const STAGE: Record<LoadStage, string> = { worker: 'Starting Air worker', download: 'Downloading', init: 'Loading model', verify: 'Testing model' };
 const openManager = () => window.dispatchEvent(new Event('airfx:ai-manager'));
 
 /** Size shown before anything downloads; nothing loads until this is pressed. */
@@ -122,8 +122,8 @@ export function ModelCard({ model, compact }: { model: ModelKey; compact?: boole
       )}
       {s.status === 'idle' && <button className="btn btn--sm btn--block btn--accent" onClick={() => ai.load(model).catch(() => undefined)}>{cached ? 'Load Model' : `Download & Load · about ${mb} MB`}</button>}
       {s.status === 'error' && <button className="btn btn--sm btn--block btn--accent" onClick={() => ai.load(model).catch(() => undefined)}>Retry</button>}
-      {s.status === 'ready' && !compact && <div className="audio__buttons"><button className="btn btn--sm" disabled={ai.isBusy(model)} onClick={() => ai.reload(model).catch(() => undefined)}>Reload</button><button className="btn btn--sm" onClick={openManager}>AI Status</button></div>}
-      {s.status !== 'ready' && !compact && <button className="linkbtn small" onClick={openManager}>AI Status</button>}
+      {s.status === 'ready' && !compact && <div className="audio__buttons"><button className="btn btn--sm" disabled={ai.isBusy(model)} onClick={() => ai.reload(model).catch(() => undefined)}>Reload</button><button className="btn btn--sm" onClick={openManager}>Air Status</button></div>}
+      {s.status !== 'ready' && !compact && <button className="linkbtn small" onClick={openManager}>Air Status</button>}
       {!compact && s.status === 'idle' && !cached && <p className="small muted">Downloaded once from Hugging Face, then cached in this browser. Your media stays on this computer.</p>}
     </div>
   );

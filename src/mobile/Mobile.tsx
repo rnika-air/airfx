@@ -84,25 +84,29 @@ export function Sheet({ title, size, onSize, onClose, actions, children }: { tit
   );
 }
 
+/** Experimental tools: reachable from the menu, kept out of the editing workspaces. */
+const EXPERIMENTAL: { id: AppMode; name: string; note: string }[] = [
+  { id: 'depthlab', name: 'Depth Lab', note: 'Compare depth models on test scenes' },
+];
+
 const WORKSPACES: { id: AppMode; name: string; note: string; wide?: boolean }[] = [
   { id: 'effects', name: 'Effects', note: 'The effect library and stack' },
   { id: 'key', name: 'Key', note: 'Remove or replace the background' },
   { id: 'cleanup', name: 'Cleanup', note: 'Remove objects and blemishes' },
   { id: 'depth', name: 'Depth', note: 'Depth maps, focus and fog' },
-  { id: 'depthlab', name: 'Depth Lab', note: 'Compare depth models' },
   { id: 'live', name: 'Live', note: 'Effects on your camera' },
   { id: 'gesture', name: 'Gesture Studio', note: 'Paint with your hands', wide: true },
   { id: 'timeline', name: 'Timeline', note: 'Layered motion compositions', wide: true },
 ];
 
 export function MobileHeader({ mode, canUndo, canRedo, onUndo, onRedo, onMenu }: { mode: AppMode; canUndo: boolean; canRedo: boolean; onUndo: () => void; onRedo: () => void; onMenu: () => void }) {
-  const ws = WORKSPACES.find((w) => w.id === mode);
+  const ws = WORKSPACES.find((w) => w.id === mode) ?? EXPERIMENTAL.find((w) => w.id === mode);
   return (
     <header className="mhead">
-      <button className="mhead__brand" onClick={onMenu} aria-label="Menu and workspaces">
+      <div className="mhead__brand">
         <HomeLogo />
-        <span className="mhead__ws mono">{ws?.name ?? 'Effects'} <span aria-hidden>▾</span></span>
-      </button>
+        <button className="mhead__ws mono" onClick={onMenu} aria-label="Menu and workspaces">{ws?.name ?? 'Effects'} <span aria-hidden>▾</span></button>
+      </div>
       <div className="mhead__actions">
         <button className="mbtn" onClick={onUndo} disabled={!canUndo} aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" /></svg></button>
         <button className="mbtn" onClick={onRedo} disabled={!canRedo} aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden><path d="m15 14 5-5-5-5M20 9H10a6 6 0 0 0 0 12h3" /></svg></button>
@@ -133,10 +137,16 @@ export function MobileMenu({ mode, onMode, onClose, onAbout, onAi, onIntro }: { 
             </li>
           ))}
         </ul>
+        <p className="mmenu__label mono">Experimental</p>
+        <ul className="mmenu__list mmenu__list--plain">
+          {EXPERIMENTAL.map((w) => (
+            <li key={w.id}><button className={mode === w.id ? 'on' : ''} onClick={() => { onMode(w.id); onClose(); }}><strong>{w.name}</strong><span>{w.note}</span></button></li>
+          ))}
+        </ul>
         <p className="mmenu__label mono">AirFx</p>
         <ul className="mmenu__list mmenu__list--plain">
           <li><button onClick={() => { onClose(); onAbout(); }}><strong>About AirFx</strong><span>Info, creator, contact and legal</span></button></li>
-          <li><button onClick={() => { onClose(); onAi(); }}><strong>AI Models</strong><span>Download and check the on-device models</span></button></li>
+          <li><button onClick={() => { onClose(); onAi(); }}><strong>Air Models</strong><span>Download and check the on-device models</span></button></li>
           <li><button onClick={() => { onClose(); onIntro(); }}><strong>Replay Intro</strong><span>The AirFx welcome screen</span></button></li>
         </ul>
         <p className="mmenu__fine mono">AirFx v{__APP_VERSION__}</p>

@@ -144,7 +144,7 @@ export const airDepth: EffectDefinition = {
   params: [
     {
       key: 'source', label: 'Depth Source', type: 'select', group: 'Depth Map', default: 'model',
-      options: [{ value: 'model', label: 'AI Model' }, { value: 'gradient', label: 'Procedural Gradient' }, { value: 'luma', label: 'Procedural Brightness' }],
+      options: [{ value: 'model', label: 'Air Model' }, { value: 'gradient', label: 'Procedural Gradient' }, { value: 'luma', label: 'Procedural Brightness' }],
     },
     { key: 'view', label: 'View', type: 'select', group: 'Depth Map', default: 'final', options: [{ value: 'final', label: 'Final' }, { value: 'original', label: 'Original' }, { value: 'depth', label: 'Depth Map' }, { value: 'color', label: 'Colorized Depth' }, { value: 'side', label: 'Side by Side' }, { value: 'depthOverlay', label: 'Depth Overlay' }, { value: 'overlay', label: 'Focus Overlay' }, { value: 'mask', label: 'Focus Mask' }] },
     { key: 'depthContrast', label: 'Depth Contrast', type: 'range', group: 'Depth Map', min: 0.3, max: 4, step: 0.01, default: 1 },

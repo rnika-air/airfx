@@ -1,5 +1,69 @@
-﻿import type { EffectDefinition } from './types';
+import type { EffectDefinition } from './types';
 import { boxBlur, clamp255, hash2, sampleBilinear } from '../utils/imageProcessing';
+import { GLSL_COMMON, gpu, type Tex } from '../engine/gpu';
+
+/* ── The same tube on the GPU: bloom (weight, box blur ×2), then the tube pass. ── */
+const BLOOM_W = GLSL_COMMON + `
+uniform sampler2D u_tex0;
+void main() { vec4 s = texelFetch(u_tex0, px(), 0) * 255.0; float w = max(0.0, (s.r + s.g + s.b) / 765.0 - 0.45) * 2.0; outColor = vec4(s.rgb * w, 1.0); }`;
+// One box pass of imageProcessing.boxBlur (radius r, edges clamped), across or down.
+const BOX = GLSL_COMMON + `
+uniform sampler2D u_tex0; uniform float u_r; uniform bool u_down;
+void main() { ivec2 p = px(); int r = int(u_r); vec3 acc = vec3(0.0);
+  for (int i = -64; i <= 64; i++) { if (i < -r || i > r) continue; acc += u_down ? at(u_tex0, p.x, p.y + i).rgb : at(u_tex0, p.x + i, p.y).rgb; }
+  outColor = vec4(acc / float(2 * r + 1), 1.0); }`;
+const TUBE = GLSL_COMMON + `
+uniform sampler2D u_tex0; uniform sampler2D u_tex1;
+uniform float u_k, u_chroma, u_vig, u_bloom, u_bright, u_mask, u_maskS, u_mScale, u_scan, u_lineSize, u_noise, u_flicker, u_roll, u_seed; uniform bool u_hasBloom;
+void main() {
+  ivec2 p = px(); float W = u_size.x, H = u_size.y;
+  float nx = (float(p.x) / W) * 2.0 - 1.0, ny = (float(p.y) / H) * 2.0 - 1.0;
+  float r2 = nx * nx + ny * ny, fx = nx * (1.0 + u_k * r2), fy = ny * (1.0 + u_k * r2);
+  if (abs(fx) > 1.0 || abs(fy) > 1.0) { outColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
+  float sx = ((fx + 1.0) / 2.0) * W, sy = ((fy + 1.0) / 2.0) * H;
+  float r = bilinear(u_tex0, sx + u_chroma, sy).r, g = bilinear(u_tex0, sx, sy).g, b = bilinear(u_tex0, sx - u_chroma, sy).b;
+  if (u_hasBloom) { vec3 bl = at(u_tex1, int(sx), int(sy)).rgb; r += bl.r * u_bloom; g += bl.g * u_bloom; b += bl.b * u_bloom; }
+  int mask = int(u_mask);
+  if (mask > 0 && u_maskS > 0.0) {
+    int sub = int(floor(sx / u_mScale)) % 3;
+    if (mask == 2 && int(floor(sy / (u_mScale * 3.0))) % 2 == 1) sub = (sub + 1) % 3;
+    float m = 1.0;
+    if (mask == 3) { float cxp = fract(sx / u_mScale) - 0.5, cyp = fract(sy / u_mScale) - 0.5; m = 1.0 - min(1.0, (cxp * cxp + cyp * cyp) * 3.0); }
+    float lo = 1.0 - u_maskS, dm = mask == 3 ? 0.6 + 0.4 * m : 1.0;
+    r *= (sub == 0 ? 1.0 : lo) * dm * 1.25; g *= (sub == 1 ? 1.0 : lo) * dm * 1.25; b *= (sub == 2 ? 1.0 : lo) * dm * 1.25;
+  }
+  float s = u_scan > 0.0 ? 1.0 - u_scan * (0.5 - 0.5 * cos((sy / u_lineSize) * 6.283185307179586)) : 1.0;
+  float m6 = max(abs(fx), abs(fy)); m6 = m6 * m6 * m6; m6 *= m6;
+  float v = 1.0 - u_vig * m6 - u_vig * 0.35 * r2;
+  float bar = abs(sy / H - u_roll) < 0.06 ? 1.08 : 1.0;
+  float gain = s * max(0.0, v) * u_bright * u_flicker * bar;
+  if (u_noise > 0.0) gain *= 1.0 + (hash2(p.x, p.y, int(u_seed)) - 0.5) * u_noise * 2.0;
+  outColor = vec4(floor(clamp(vec3(r, g, b) * gain, 0.0, 255.0)) / 255.0, 1.0);
+}`;
+const MASKS: Record<string, number> = { none: 0, grille: 1, slot: 2, dots: 3 };
+
+/** The CRT on the GPU; false when it cannot run there. */
+function crtGpu(srcCanvas: TexImageSource, ctx: CanvasRenderingContext2D, w: number, h: number, u: Record<string, number | boolean>, bloomR: number) {
+  if (!gpu.can(w, h, u.u_hasBloom === true)) return false;
+  const used: (Tex | null)[] = [];
+  try {
+    const src = gpu.upload(srcCanvas, w, h); used.push(src);
+    if (!src) return false;
+    let bloom: Tex | null = null;
+    if (u.u_hasBloom) {
+      const a = gpu.target(w, h, true), b = gpu.target(w, h, true); used.push(a, b);
+      if (!a || !b) return false;
+      gpu.run(BLOOM_W, w, h, [src], {}, a);
+      if (bloomR > 0) for (let n = 0; n < 2; n++) { gpu.run(BOX, w, h, [a], { u_r: bloomR, u_down: false }, b); gpu.run(BOX, w, h, [b], { u_r: bloomR, u_down: true }, a); }
+      bloom = a;
+    }
+    const out = gpu.run(TUBE, w, h, bloom ? [src, bloom] : [src, src], u);
+    if (!out) return false;
+    ctx.drawImage(out, 0, 0);
+    return true;
+  } catch (e) { console.warn('CRT fell back to CPU:', e); return false; }
+  finally { gpu.release(...used); }
+}
 
 /**
  * CRT: barrel curvature, convergence error (chroma offset), phosphor mask,
@@ -30,7 +94,8 @@ export const crt: EffectDefinition = {
     { key: 'flicker', label: 'Flicker', type: 'range', group: 'Signal', min: 0, max: 0.3, step: 0.005, default: 0.03 },
     { key: 'roll', label: 'Rolling Bar', type: 'toggle', group: 'Signal', default: true },
   ],
-  render({ src, ctx, width, height, params, unit, time, frame }) {
+  render(input) {
+    const { ctx, width, height, params, unit, time, frame } = input;
     const curv = params.curvature as number;
     const chroma = (params.chroma as number) * unit;
     const vig = params.vignette as number;
@@ -44,7 +109,13 @@ export const crt: EffectDefinition = {
     const noise = params.noise as number;
     const flicker = 1 - (params.flicker as number) * (0.5 + 0.5 * Math.sin(time * 61.7)) ;
     const rollPos = params.roll ? (time * 0.18) % 1.3 - 0.15 : -10;
-    const d = src.data;
+    // On the GPU when it can (the same maths per pixel; the blur radius is capped at 64 px there).
+    const bloomR = Math.max(0, Math.round(8 * unit));
+    if (bloomR <= 64 && crtGpu(input.srcCanvas, ctx, width, height, {
+      u_k: curv * 0.25, u_chroma: chroma, u_vig: vig, u_bloom: bloomAmt, u_bright: bright, u_mask: MASKS[mask] ?? 0, u_maskS: maskS, u_mScale: mScale,
+      u_scan: scan, u_lineSize: lineSize, u_noise: noise, u_flicker: flicker, u_roll: rollPos, u_seed: frame * 131 + 7, u_hasBloom: bloomAmt > 0,
+    }, bloomR)) return;
+    const d = input.src.data;
     const n = width * height;
 
     // Bloom source: blurred brightness-weighted copy of each channel.

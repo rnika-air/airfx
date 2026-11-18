@@ -18,7 +18,7 @@ export type FillMethod = 'march' | 'patch' | 'lama' | 'reference' | 'manual' | '
 export const METHOD_INFO: Record<FillMethod, { label: string; kind: string; note: string }> = {
   march: { label: 'Local Inpaint', kind: 'Local inpainting', note: 'Grows the edges inward. Best for scratches, wires, small specks.' },
   patch: { label: 'Patch Reconstruction', kind: 'Local inpainting', note: 'Copies matching patches from elsewhere in this image. Best for walls, grass, repeating texture.' },
-  lama: { label: 'AI Reconstruction', kind: 'AI-generated reconstruction', note: 'LaMa rebuilds structure from the surrounding image. Larger holes. Softer detail.' },
+  lama: { label: 'Air Reconstruction', kind: 'Air-generated reconstruction', note: 'LaMa rebuilds structure from the surrounding image. Larger holes. Softer detail.' },
   reference: { label: 'Reference Guided', kind: 'Reference-guided reconstruction', note: 'Patches may also come from a reference image you supply.' },
   manual: { label: 'Manual Patch', kind: 'Manual patching', note: 'Paints pixels from a source point you choose.' },
   temporal: { label: 'Video Reconstruction', kind: 'Temporal reconstruction', note: 'Reveals the background from other frames, then fills only what no frame shows.' },

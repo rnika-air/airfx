@@ -59,11 +59,25 @@ export const pixelSort: EffectDefinition = {
     const len = vertical ? height : width;
     const idx = (line: number, k: number) => (vertical ? k * width + line : line * width + k);
     const spanIdx: number[] = [];
+    // Sorted as numbers, not objects: each entry packs the key (20 bits) above its
+    // position in the span (16 bits), so equal keys keep their order, as before.
+    const cap = Math.max(len, 2), packed = new Float64Array(cap), vals = new Uint32Array(cap);
+    const Q = (1 << 20) - 1;
     const flush = () => {
-      if (spanIdx.length > 1) {
+      const n = spanIdx.length;
+      if (n > 1 && n < 65536) {
+        for (let j = 0; j < n; j++) {
+          const q = Math.round(keyOf(spanIdx[j]) * Q);
+          packed[j] = (reverse ? Q - q : q) * 65536 + j;
+          vals[j] = px[spanIdx[j]];
+        }
+        const view = packed.subarray(0, n);
+        view.sort();
+        for (let j = 0; j < n; j++) px[spanIdx[j]] = vals[view[j] % 65536];
+      } else if (n > 1) {
         const items = spanIdx.map((i) => ({ k: keyOf(i), p: px[i] }));
         items.sort((a, b) => (reverse ? b.k - a.k : a.k - b.k));
-        for (let j = 0; j < spanIdx.length; j++) px[spanIdx[j]] = items[j].p;
+        for (let j = 0; j < n; j++) px[spanIdx[j]] = items[j].p;
       }
       spanIdx.length = 0;
     };

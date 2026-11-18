@@ -13,7 +13,9 @@ import { showcase, type ShowcaseItem } from './previews';
  * devices), and only while it is on screen.
  */
 
-const W = 360, H = 450;
+/** Render size: the card's own size in device pixels (sharp on 2× and 4K screens), within these bounds. */
+const MIN_W = 240, MAX_W = 960;
+const renderSize = (box: HTMLElement) => { const W = Math.max(MIN_W, Math.min(MAX_W, Math.round(box.clientWidth * Math.min(2, window.devicePixelRatio || 1)))); return [W, Math.round((W * 5) / 4)]; };
 const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export const LIVE_EFFECTS = ['glitch2', 'pixelArt', 'thermal', 'moire', 'halftone', 'dreamy', 'ascii', 'nightVision'];
@@ -57,6 +59,7 @@ export function LiveFx({ effects = LIVE_EFFECTS, every = 3200, offset = 0, only,
   useEffect(() => {
     const c = canvas.current, m = el.current, box = wrap.current;
     if (!c || !m || !box || !fx || !item || !ready) return;
+    const [W, H] = renderSize(box);
     c.width = W; c.height = H;
     const renderer = new FrameRenderer();
     const params = defaultParams(fx);
