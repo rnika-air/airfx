@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
 import { HomeLogo } from '../components/Wordmark';
 import { WORD_PATH } from '../components/logoPaths';
 import { LIBRARY } from '../effects/registry';
@@ -9,6 +9,7 @@ import { CREATOR, INTRO_TEXT } from '../about/config';
 import { previews, type Preview } from './previews';
 import { LiveFx, TYPE_NAME } from './LiveFx';
 import { DotField, DOT_INTRO_SECONDS } from './DotField';
+import { NeonWord } from './NeonWord';
 
 /**
  * The way into AirFx: an intro screen, the log-in / sign-up screen that
@@ -82,13 +83,18 @@ function Ticker() {
 /**
  * The front page's centrepiece: the AirFx lettering from the logo artwork, as
  * large as the screen allows, in lime. It is vector, so it is sharp at any size.
- * The original A mark stays in the top bar.
+ * The original A mark stays in the top bar. Where WebGL2 runs, it is drawn as a
+ * lime neon sign that melts under the cursor (NeonWord); the vector wordmark
+ * stays underneath for layout and as the fallback.
  */
 function Lockup() {
+  const [neon, setNeon] = useState(false);
+  const ready = useCallback((ok: boolean) => setNeon(ok), []);
   return (
-    <h1 className="sp__lockup">
+    <h1 className={`sp__lockup${neon ? ' sp__lockup--neon' : ''}`}>
       <span className="sr-only">AirFx</span>
       <svg className="sp__word" viewBox="411 2046 847 217" aria-hidden><path d={WORD_PATH} fillRule="evenodd" /></svg>
+      <NeonWord onReady={ready} />
     </h1>
   );
 }
@@ -134,6 +140,13 @@ function Collage({ list }: { list: Preview[] }) {
   );
 }
 
+/**
+ * The front page shows Enter AirFx only, for now. Create Account and Log In are
+ * hidden, not removed: set this to true to bring them back (accounts still work
+ * from inside the app).
+ */
+const SHOW_ACCOUNT_BUTTONS = false;
+
 export function Splash({ onEnter, onAuth, onAbout }: { onEnter?: () => void; onAuth: (m: AuthMode) => void; onAbout: () => void }) {
   const list = usePreviews();
   const [phase, setPhase] = useState<'intro' | 'ready'>(() => (reduced() ? 'ready' : 'intro'));
@@ -160,7 +173,7 @@ export function Splash({ onEnter, onAuth, onAbout }: { onEnter?: () => void; onA
         <nav className="sp__nav">
           {phase === 'intro' && <button className="pill pill--ink pill--sm" onClick={() => { setSkipped(true); setPhase('ready'); }}>Skip Intro</button>}
           <button className="pill pill--ink pill--sm" onClick={onAbout}>Info</button>
-          {cloudEnabled && <button className="pill pill--ink pill--sm sp__hide-sm" onClick={() => onAuth('login')}>Log In</button>}
+          {SHOW_ACCOUNT_BUTTONS && cloudEnabled && <button className="pill pill--ink pill--sm sp__hide-sm" onClick={() => onAuth('login')}>Log In</button>}
         </nav>
       </header>
 
@@ -171,9 +184,10 @@ export function Splash({ onEnter, onAuth, onAbout }: { onEnter?: () => void; onA
           <Lockup />
           <p className="sp__lead">{INTRO_TEXT}</p>
           <div className="sp__cta">
-            {onEnter && <button ref={enterRef} className="pill pill--ink-solid pill--lg" onClick={onEnter}>Enter AirFx <span aria-hidden>→</span></button>}
-            {cloudEnabled && <button className="pill pill--ink pill--lg" onClick={() => onAuth('signup')}>Create Account</button>}
-            {cloudEnabled && <button className="pill pill--ink pill--lg" onClick={() => onAuth('login')}>Log In</button>}
+            {/* When an account is required, Enter leads to log-in instead. */}
+            <button ref={enterRef} className="pill pill--ink-solid pill--lg" onClick={onEnter ?? (() => onAuth('login'))}>Enter AirFx <span aria-hidden>→</span></button>
+            {SHOW_ACCOUNT_BUTTONS && cloudEnabled && <button className="pill pill--ink pill--lg" onClick={() => onAuth('signup')}>Create Account</button>}
+            {SHOW_ACCOUNT_BUTTONS && cloudEnabled && <button className="pill pill--ink pill--lg" onClick={() => onAuth('login')}>Log In</button>}
           </div>
         </section>
       </main>

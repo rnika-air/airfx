@@ -4,6 +4,16 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+### Intro
+- The AirFx lettering is now a lime neon sign that melts under the cursor. It has a solid lime core, a glow running from black through dark green to lime, and horizontal scanline stripes. The pointer carries an invisible liquid blob: where it meets the letters they swell, run together and close up like liquid, then settle back into clean type as it moves away. A finger does the same on phones and tablets.
+- The neon is drawn by the GPU (WebGL2) around the logo only. It animates only while something is moving, stops off screen and in background tabs, and the canvas never blocks clicks. Reduced motion shows it still, and without WebGL2 the plain wordmark shows as before.
+- The front page shows one button, Enter AirFx. Create Account and Log In are hidden for now (accounts still work, and the buttons can be switched back on). When an account is required, Enter leads to log-in.
+- The logo, intro text and Enter are centred on the screen, on phones too.
+- The wordmark no longer uses a glow filter, which some graphics cards drew as a dark box behind it.
+
+### Information page
+- MIKAIR now stretches across the full width on its own row, below the Created By label, instead of running into it.
+- The footer reads Created by MIKAIR 2026.
 
 ## v5.4.0 (2026-11-18)
 ### Intro

@@ -148,7 +148,8 @@ export function About({ onClose }: { onClose: () => void }) {
         <Section n={4} id="creator" label="Created By" wide aside={<p className="mono">{CREATOR.from}</p>}>
           <div className="ab__giant" data-p>
             <p className="ab__by mono">Created by</p>
-            <p className="ab__alias">{CREATOR.alias}</p>
+            {/* Stretched edge to edge: the name is set to the full width, whatever the screen. */}
+            <p className="ab__alias" aria-label={CREATOR.alias}><svg viewBox="0 0 1000 176" aria-hidden><text x="0" y="160" textLength="1000" lengthAdjust="spacingAndGlyphs">{CREATOR.alias}</text></svg></p>
             <p className="ab__name">{CREATOR.name}</p>
             {[0, 1, 2].map((i) => <svg key={i} className={`ab__spark ab__spark--${i}`} viewBox="0 0 100 100" aria-hidden><path d="M50 0C54 30 70 46 100 50C70 54 54 70 50 100C46 70 30 54 0 50C30 46 46 30 50 0Z" /></svg>)}
           </div>
@@ -207,7 +208,7 @@ export function About({ onClose }: { onClose: () => void }) {
 
         <footer className="ab__foot">
           <Wordmark size="lg" />
-          <p className="mono">Created by {CREATOR.alias} · {CREATOR.name}, {CREATOR.from}. · AirFx v{__APP_VERSION__}</p>
+          <p className="mono">Created by {CREATOR.alias} {COPYRIGHT_YEAR}</p>
           <button className="pill pill--lime" onClick={onClose}>Back To AirFx</button>
         </footer>
       </div>

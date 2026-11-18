@@ -550,7 +550,13 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .ab__sec--wide .ab__body { max-width: none; }
 .ab__giant { position: relative; margin-bottom: 20px; }
 .ab__by { color: var(--accent); margin: 0 0 8px !important; }
-.ab__alias { position: relative; z-index: 1; margin: 0 !important; font-size: clamp(72px, 15vw, 250px) !important; font-weight: 800; line-height: 0.84 !important; letter-spacing: -0.065em; text-transform: uppercase; transform-origin: left bottom; scale: calc(1.5 - 0.5 * min(1, var(--p, 1) * 2.4)); }
+/* The creator block takes the whole width of the section, under the number and label,
+   so the name never runs into them; the name is stretched from edge to edge and wipes in. */
+.ab__sec--wide .ab__body { grid-column: 1 / -1; grid-row: 2; }
+.ab__sec--wide .ab__aside { grid-column: -2 / -1; grid-row: 1; text-align: right; }
+.ab__alias { position: relative; z-index: 1; margin: 0 !important; line-height: 0 !important; clip-path: inset(-10% calc((1 - min(1, var(--p, 1) * 2.2)) * 100%) -10% 0); }
+.ab__alias svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ab__alias text { font-size: 200px; font-weight: 800; fill: var(--text); text-transform: uppercase; }
 .ab__giant .ab__name { position: relative; z-index: 1; font-size: clamp(22px, 2.6vw, 38px) !important; letter-spacing: -0.02em; margin: 14px 0 0 !important; color: var(--text); }
 .ab__spark { position: absolute; z-index: 0; fill: var(--accent); width: clamp(40px, 6vw, 96px); translate: 0 calc((0.5 - var(--p, 0.5)) * 140px); animation: ab-twinkle 5.5s ease-in-out infinite; }
 .ab__spark--0 { right: 6%; top: -6%; }
@@ -558,14 +564,14 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .ab__spark--2 { left: 48%; top: -14%; width: clamp(22px, 2.6vw, 44px); animation-delay: -3.6s; }
 @keyframes ab-twinkle { 50% { rotate: 45deg; scale: 0.78; } }
 .ab--still .ab__reveal > * { opacity: 1; translate: none; transition: none; }
-.ab--still .ab__statement, .ab--still .ab__band .ab__strip, .ab--still .ab__alias, .ab--still .ab__spark, .ab--still .ab__ring { translate: none; scale: none; rotate: none; opacity: 1; }
+.ab--still .ab__alias { clip-path: none; }
+.ab--still .ab__statement, .ab--still .ab__band .ab__strip, .ab--still .ab__spark, .ab--still .ab__ring { translate: none; scale: none; rotate: none; opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .ab__line > span, .ab__meta, .ab__spark { animation: none; } }
 @media (max-width: 760px) {
   .ab__hero { min-height: 62vh; }
   .ab__statement { font-size: clamp(36px, 11.5vw, 56px); }
   .ab__band .ab__strip { scale: calc(0.92 + 0.08 * var(--bump, 0)); }
   .ab__ring { top: -34px; right: 18px; width: 76px; }
-  .ab__alias { font-size: 21vw !important; }
 }
 
 /* ── Front page stage: AIRFX as the centrepiece ────────────────
@@ -586,8 +592,9 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .sp__main--stage .sp__copy { position: relative; z-index: 6; align-items: center; text-align: center; gap: clamp(12px, 2vh, 22px); pointer-events: none; padding: 0 clamp(12px, 3vw, 40px); }
 .sp__main--stage .sp__copy > * { pointer-events: auto; }
 .sp__main--stage .sp__lockup { display: block; }
-.sp__main--stage .sp__word { display: block; width: min(64vw, 112vh, 1180px); max-width: none; fill: var(--accent); filter: drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7)); transition: filter 0.5s, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.sp__main--stage .sp__lockup:hover .sp__word { filter: drop-shadow(0 10px 40px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 34px rgba(198, 255, 46, 0.4)); transform: scale(1.012); }
+.sp__main--stage .sp__word { display: block; width: min(64vw, 112vh, 1180px); max-width: none; fill: var(--accent); transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+/* No filters on the wordmark: on some graphics cards a filter this size draws as a dark box. */
+.sp__main--stage .sp__lockup:hover .sp__word { transform: scale(1.012); }
 .sp__main--stage .sp__kicker { margin: 0; text-shadow: 0 1px 10px #050605; }
 .sp__main--stage .sp__lead { max-width: 44ch; font-size: clamp(15px, 1.2vw, 19px); margin: 0 auto; text-shadow: 0 1px 14px #050605, 0 0 2px #050605; }
 .sp__main--stage .sp__cta { justify-content: center; }
@@ -600,7 +607,7 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
   .sp__main--stage .sp__card--t1, .sp__main--stage .sp__card--t2 { display: none; }
 }
 @media (max-width: 760px) {
-  .sp__main--stage { display: flex; flex-direction: column; align-items: stretch; overflow: visible; }
+  .sp__main--stage { display: flex; flex-direction: column; align-items: stretch; justify-content: center; flex: 1 0 auto; overflow: visible; }
   .sp__main--stage .sp__copy { display: contents; }
   .sp__main--stage .sp__kicker { order: 1; text-align: center; }
   .sp__main--stage .sp__lockup { order: 2; }
@@ -621,3 +628,13 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
   .sp__main--stage .sp__card--t1, .sp__main--stage .sp__card--t2 { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .sp__main--stage .sp__word { transition: none; } .sp__main--stage .sp__lockup:hover .sp__word { transform: none; } }
+@media (max-width: 760px) { .ab__sec--wide .ab__aside { grid-column: 1 / -1; grid-row: auto; text-align: left; } }
+
+/* Neon wordmark (NeonWord): the canvas sits over the vector lettering, with room for
+   its glow, and never takes pointer input, so Enter and the cards stay clickable. */
+.sp__main--stage .sp__lockup { position: relative; }
+.sp__neon { position: absolute; z-index: 1; pointer-events: none; display: block; }
+.sp__lockup--neon .sp__word { visibility: hidden; }
+.sp--ready .sp__neon { animation: rise 0.9s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.sp--intro .sp__neon { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .sp--ready .sp__neon { animation: none; } }
