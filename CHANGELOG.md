@@ -4,6 +4,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+### Intro
+- Fixed: on some browsers the front-page logo showed as a solid lime box covering the screen. The logo is the plain vector AirFx lettering again, as before the melting experiment, and draws the same everywhere.
 
 ## v5.5.0 (2026-11-19)
 ### New finishing effects

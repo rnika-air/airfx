@@ -630,15 +630,6 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 @media (prefers-reduced-motion: reduce) { .sp__main--stage .sp__word { transition: none; } .sp__main--stage .sp__lockup:hover .sp__word { transform: none; } }
 @media (max-width: 760px) { .ab__sec--wide .ab__aside { grid-column: 1 / -1; grid-row: auto; text-align: left; } }
 
-/* Neon wordmark (NeonWord): the canvas sits over the vector lettering, with room for
-   its glow, and never takes pointer input, so Enter and the cards stay clickable. */
-.sp__main--stage .sp__lockup { position: relative; }
-.sp__neon { position: absolute; z-index: 1; pointer-events: none; display: block; }
-.sp__lockup--neon .sp__word { visibility: hidden; }
-.sp--ready .sp__neon { animation: rise 0.9s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.sp--intro .sp__neon { visibility: hidden; }
-@media (prefers-reduced-motion: reduce) { .sp--ready .sp__neon { animation: none; } }
-
 /* Centring: the faint line above the logo sits just above the group without
    counting towards it, so the visible block (logo, text, Enter) is what gets
    centred between the top bar and the footer, on every desktop and tablet size. */
