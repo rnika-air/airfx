@@ -1,21 +1,7 @@
 ﻿import type { EffectDefinition, RenderInput } from './types';
 import { adjust, boxBlur, clamp255, hash2, hexToRgb, luminance } from '../utils/imageProcessing';
 import { STEADY, Steady } from './tone';
-
-/** Helper for simple per-pixel colour mappings. */
-function mapPixels(
-  { src, ctx, width, height }: RenderInput,
-  fn: (r: number, g: number, b: number, out: Uint8ClampedArray, i: number) => void,
-) {
-  const sp = src.data;
-  const out = ctx.createImageData(width, height);
-  const op = out.data;
-  for (let i = 0; i < sp.length; i += 4) {
-    fn(sp[i], sp[i + 1], sp[i + 2], op, i);
-    op[i + 3] = sp[i + 3];
-  }
-  ctx.putImageData(out, 0, 0);
-}
+import { channelMap, colorMap, keyOf } from './adjust/colorTable';
 
 export const invert: EffectDefinition = {
   id: 'invert',
@@ -29,7 +15,8 @@ export const invert: EffectDefinition = {
   render(input) {
     const a = input.params.amount as number;
     const lumaOnly = input.params.lumaOnly as boolean;
-    mapPixels(input, (r, g, b, o, i) => {
+    // Colour-only: each distinct colour is worked out once (exact).
+    colorMap(input, keyOf('invert', input.params), (r, g, b, o, i) => {
       if (lumaOnly) {
         const l = luminance(r, g, b) * 255;
         const d = (255 - 2 * l) * a; // shift every channel by the luma inversion delta
@@ -139,7 +126,7 @@ export const threshold: EffectDefinition = {
     const soft = Math.max(0.0001, input.params.softness as number);
     const d = hexToRgb(input.params.dark as string);
     const l = hexToRgb(input.params.light as string);
-    mapPixels(input, (r, g, b, o, i) => {
+    colorMap(input, keyOf('threshold', input.params), (r, g, b, o, i) => {
       const t = Math.min(1, Math.max(0, (luminance(r, g, b) - lv) / soft + 0.5));
       o[i] = d[0] + (l[0] - d[0]) * t;
       o[i + 1] = d[1] + (l[1] - d[1]) * t;
@@ -163,11 +150,10 @@ export const posterize: EffectDefinition = {
     const c = input.params.contrast as number;
     const br = input.params.brightness as number;
     const q = (v: number) => (Math.round(adjust(v / 255, br, c) * n) / n) * 255;
-    mapPixels(input, (r, g, b, o, i) => {
-      o[i] = q(r);
-      o[i + 1] = q(g);
-      o[i + 2] = q(b);
-    });
+    // Each channel on its own: one exact 256-entry table.
+    const t = new Uint8ClampedArray(256);
+    for (let v = 0; v < 256; v++) t[v] = q(v);
+    channelMap(input, t);
   },
 };
 
@@ -187,7 +173,7 @@ export const duotone: EffectDefinition = {
     const h = hexToRgb(input.params.highlight as string);
     const c = input.params.contrast as number;
     const br = input.params.brightness as number;
-    mapPixels(input, (r, g, b, o, i) => {
+    colorMap(input, keyOf('duotone', input.params), (r, g, b, o, i) => {
       const t = adjust(luminance(r, g, b), br, c);
       o[i] = s[0] + (h[0] - s[0]) * t;
       o[i + 1] = s[1] + (h[1] - s[1]) * t;

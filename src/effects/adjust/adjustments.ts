@@ -4,6 +4,7 @@ import {
   SEL_RANGES, byteLut, curveSampler, decodeLut, gradientRamp, hex, hslToRgb, hueWeight, HUE_CENTERS, parseCurves,
   parseSel, parseStops, rgbToHsl, sampleLut, type Lut3D,
 } from './core';
+import { channelMap, colorMap, keyOf } from './colorTable';
 
 /** Per-pixel helper; alpha is preserved. fn receives 0..255 floats and writes rgb. */
 function map(input: RenderInput, fn: (r: number, g: number, b: number, o: Uint8ClampedArray, i: number) => void) {
@@ -47,7 +48,7 @@ export const light = A('adjLight', 'Light', 'Exposure, contrast, and independent
     y += bl * 0.25 * (1 - x) ** 4;
     tone[i] = Math.max(0, Math.min(1.2, y));
   }
-  map(input, (r, g, b, o, i) => {
+  colorMap(input, keyOf('adjLight', input.params), (r, g, b, o, i) => {
     const l = Math.round(Math.min(255, lum(r, g, b)));
     const k = l > 0 ? (tone[l] * 255) / l : 1;
     const add = l === 0 ? tone[0] * 255 : 0;
@@ -67,7 +68,7 @@ export const colorVibrance = A('adjColor', 'Color & Vibrance', 'White balance, s
   const p = input.params;
   const t = (p.temperature as number) / 100, ti = (p.tint as number) / 100, sat = 1 + (p.saturation as number) / 100, vib = (p.vibrance as number) / 100;
   const rm = 1 + t * 0.25 + ti * 0.1 + (p.red as number) / 200, gm = 1 - ti * 0.2 + (p.green as number) / 200, bm = 1 - t * 0.25 + ti * 0.1 + (p.blue as number) / 200;
-  map(input, (r0, g0, b0, o, i) => {
+  colorMap(input, keyOf('adjColor', input.params), (r0, g0, b0, o, i) => {
     const r = r0 * rm, g = g0 * gm, b = b0 * bm;
     const max = Math.max(r, g, b), min = Math.min(r, g, b), l = lum(r, g, b);
     const s = max > 0 ? (max - min) / max : 0;
@@ -143,15 +144,28 @@ export const levels = A('adjLevels', 'Levels', 'Input black, gamma and white poi
   range('white', 'White Point', 2, 255, 1, 255, 'Input'),
   range('outBlack', 'Output Black', 0, 255, 1, 0, 'Output'),
   range('outWhite', 'Output White', 0, 255, 1, 255, 'Output'),
+  // Per channel, as in Photoshop: each channel's own levels, applied after the composite.
+  ...(['r', 'g', 'b'] as const).flatMap((c) => {
+    const name = { r: 'Red', g: 'Green', b: 'Blue' }[c];
+    return [
+      range(`${c}Black`, 'Black Point', 0, 253, 1, 0, `${name} Channel`),
+      range(`${c}Gamma`, 'Midtone (Gamma)', 0.1, 5, 0.01, 1, `${name} Channel`),
+      range(`${c}White`, 'White Point', 2, 255, 1, 255, `${name} Channel`),
+      range(`${c}OutBlack`, 'Output Black', 0, 255, 1, 0, `${name} Channel`),
+      range(`${c}OutWhite`, 'Output White', 0, 255, 1, 255, `${name} Channel`),
+    ];
+  }),
 ], (input) => {
   const p = input.params;
-  const b0 = p.black as number, w0 = Math.max(b0 + 1, p.white as number), g = 1 / (p.gamma as number);
-  const ob = p.outBlack as number, ow = p.outWhite as number;
-  const l = byteLut((x) => {
-    const n = Math.min(1, Math.max(0, (x * 255 - b0) / (w0 - b0)));
-    return (ob + (ow - ob) * n ** g) / 255;
-  });
-  map(input, (r, g2, b, o, i) => { o[i] = l[r]; o[i + 1] = l[g2]; o[i + 2] = l[b]; });
+  // One levels curve: black, white, gamma, then output range. 0..1 in, 0..1 out.
+  const level = (x: number, b: number, wt: number, gm: number, ob: number, ow: number) =>
+    (ob + (ow - ob) * Math.min(1, Math.max(0, (x * 255 - b) / (Math.max(b + 1, wt) - b))) ** (1 / gm)) / 255;
+  // The composite first, then each channel's own levels, as Photoshop orders them.
+  const per = (c: 'r' | 'g' | 'b') => byteLut((x) => level(
+    level(x, p.black as number, p.white as number, p.gamma as number, p.outBlack as number, p.outWhite as number),
+    (p[`${c}Black`] as number) ?? 0, (p[`${c}White`] as number) ?? 255, (p[`${c}Gamma`] as number) ?? 1, (p[`${c}OutBlack`] as number) ?? 0, (p[`${c}OutWhite`] as number) ?? 255,
+  ));
+  channelMap(input, per('r'), per('g'), per('b'));
 });
 
 export const curves = A('adjCurves', 'Curves', 'Editable tone curves for RGB, red, green and blue.', [
@@ -159,7 +173,9 @@ export const curves = A('adjCurves', 'Curves', 'Editable tone curves for RGB, re
 ], (input) => {
   const c = parseCurves(input.params.curves as string);
   const m = byteLut(curveSampler(c.rgb)), lr = byteLut(curveSampler(c.r)), lg = byteLut(curveSampler(c.g)), lb = byteLut(curveSampler(c.b));
-  map(input, (r, g, b, o, i) => { o[i] = lr[m[r]]; o[i + 1] = lg[m[g]]; o[i + 2] = lb[m[b]]; });
+  const cr = new Uint8ClampedArray(256), cg = new Uint8ClampedArray(256), cb = new Uint8ClampedArray(256);
+  for (let v = 0; v < 256; v++) { cr[v] = lr[m[v]]; cg[v] = lg[m[v]]; cb[v] = lb[m[v]]; }
+  channelMap(input, cr, cg, cb);
 });
 
 export const exposure = A('adjExposure', 'Exposure', 'Linear-light exposure, offset and gamma correction.', [
@@ -174,7 +190,7 @@ export const exposure = A('adjExposure', 'Exposure', 'Linear-light exposure, off
     const v = Math.max(0, lin * ex + of) ** g;
     return v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055;
   });
-  map(input, (r, g2, b, o, i) => { o[i] = l[r]; o[i + 1] = l[g2]; o[i + 2] = l[b]; });
+  channelMap(input, l);
 });
 
 const HUES = ['reds', 'yellows', 'greens', 'cyans', 'blues', 'magentas'];
@@ -193,7 +209,7 @@ export const hueSat = A('adjHueSat', 'Hue / Saturation', 'Master hue, saturation
   const mh = p.hue as number, ms = 1 + (p.saturation as number) / 100, ml = (p.lightness as number) / 100;
   const rh = HUES.map((h) => p[`${h}H`] as number), rs = HUES.map((h) => (p[`${h}S`] as number) / 100);
   const anyRange = rh.some(Boolean) || rs.some(Boolean);
-  map(input, (r, g, b, o, i) => {
+  colorMap(input, keyOf('adjHueSat', input.params), (r, g, b, o, i) => {
     let [h, s, l] = rgbToHsl(r / 255, g / 255, b / 255);
     let dh = mh, sm = ms;
     if (anyRange && s > 0.01) {
@@ -228,7 +244,7 @@ export const colorBalance = A('adjBalance', 'Color Balance', 'Push shadows, midt
   const sh = [v('shadows', 'CR'), v('shadows', 'MG'), v('shadows', 'YB')];
   const mi = [v('midtones', 'CR'), v('midtones', 'MG'), v('midtones', 'YB')];
   const hi = [v('highlights', 'CR'), v('highlights', 'MG'), v('highlights', 'YB')];
-  map(input, (r, g, b, o, i) => {
+  colorMap(input, keyOf('adjBalance', input.params), (r, g, b, o, i) => {
     const l = lum(r, g, b) / 255;
     const ws = Math.max(0, 1 - l * 2.2), wh = Math.max(0, l * 2.2 - 1.2), wm = Math.max(0, 1 - ws - wh);
     let R = r + sh[0] * ws + mi[0] * wm + hi[0] * wh;
@@ -255,7 +271,7 @@ export const blackWhite = A('adjBW', 'Black & White', 'Mono conversion with a se
   const p = input.params;
   const w = HUES.map((h) => (p[h] as number) / 100);
   const tint = p.tintOn ? hex(p.tint as string).map((c) => c / 255) : [1, 1, 1];
-  map(input, (r, g, b, o, i) => {
+  colorMap(input, keyOf('adjBW', input.params), (r, g, b, o, i) => {
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
     const chroma = max > 0 ? (max - min) / max : 0;
     const [h] = rgbToHsl(r / 255, g / 255, b / 255);
@@ -279,7 +295,7 @@ export const photoFilter = A('adjPhotoFilter', 'Photo Filter', 'Simulates a colo
   const P: Record<string, string> = { warm: '#ec8a00', cool: '#006dff', sepia: '#ac7a33', deepred: '#d9200f', underwater: '#00c1b1' };
   const c = hex(input.params.preset === 'custom' ? (input.params.color as string) : P[input.params.preset as string]);
   const d = (input.params.density as number) / 100, keep = input.params.preserve as boolean;
-  map(input, (r, g, b, o, i) => {
+  colorMap(input, keyOf('adjPhotoFilter', input.params), (r, g, b, o, i) => {
     // A filter passes its own colour: multiply, mixed by density.
     let R = r + ((r * c[0]) / 255 - r) * d, G = g + ((g * c[1]) / 255 - g) * d, B = b + ((b * c[2]) / 255 - b) * d;
     if (keep) {
@@ -305,7 +321,7 @@ export const channelMixer = A('adjMixer', 'Channel Mixer', 'Build each output ch
   const c = (k: string) => (p[k] as number) / 100;
   const m = [c('Rr'), c('Rg'), c('Rb'), c('Rc') * 255, c('Gr'), c('Gg'), c('Gb'), c('Gc') * 255, c('Br'), c('Bg'), c('Bb'), c('Bc') * 255];
   const mono = p.mono as boolean;
-  map(input, (r, g, b, o, i) => {
+  colorMap(input, keyOf('adjMixer', input.params), (r, g, b, o, i) => {
     const R = m[0] * r + m[1] * g + m[2] * b + m[3];
     o[i] = R;
     o[i + 1] = mono ? R : m[4] * r + m[5] * g + m[6] * b + m[7];
@@ -358,7 +374,7 @@ export const colorLookup = A('adjLookup', 'Color Lookup', 'Grade through a 3D LU
   }
   if (!lut) { input.ctx.putImageData(input.src, 0, 0); return; }
   const a = (input.params.intensity as number) / 100, t = [0, 0, 0];
-  map(input, (r, g, b, o, i) => {
+  colorMap(input, keyOf('adjLookup', input.params), (r, g, b, o, i) => {
     sampleLut(lut!, r, g, b, t);
     o[i] = r + (t[0] - r) * a; o[i + 1] = g + (t[1] - g) * a; o[i + 2] = b + (t[2] - b) * a;
   });
@@ -372,7 +388,7 @@ export const selectiveColor = A('adjSelective', 'Selective Color', 'Shift cyan, 
   const rel = input.params.method === 'relative';
   const list = SEL_RANGES.map((n, k) => ({ k, v: vals[n] })).filter((x) => x.v && x.v.some(Boolean));
   if (!list.length) { input.ctx.putImageData(input.src, 0, 0); return; }
-  map(input, (r, g, b, o, i) => {
+  colorMap(input, keyOf('adjSelective', input.params), (r, g, b, o, i) => {
     const max = Math.max(r, g, b), min = Math.min(r, g, b), [h] = rgbToHsl(r / 255, g / 255, b / 255);
     const chroma = (max - min) / 255, l = (max + min) / 510;
     let R = r, G = g, B = b;
@@ -400,7 +416,7 @@ export const gradientMap = A('adjGradientMap', 'Gradient Map', 'Map image bright
 ], (input) => {
   const ramp = gradientRamp(parseStops(input.params.stops as string));
   const rev = input.params.reverse as boolean, a = (input.params.mix as number) / 100;
-  map(input, (r, g, b, o, i) => {
+  colorMap(input, keyOf('adjGradientMap', input.params), (r, g, b, o, i) => {
     const l = Math.round(lum(r, g, b)), k = (rev ? 255 - l : l) * 3;
     o[i] = r + (ramp[k] - r) * a; o[i + 1] = g + (ramp[k + 1] - g) * a; o[i + 2] = b + (ramp[k + 2] - b) * a;
   });

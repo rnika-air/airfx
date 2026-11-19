@@ -142,20 +142,35 @@ export class ToneTracker {
     return { lo, hi };
   }
 
-  /** The source with its tones stretched, or the source itself when nothing needs doing. */
-  apply(key: string, source: HTMLCanvasElement, w: number, h: number, time: number): HTMLCanvasElement {
+  /**
+   * The source's pixels with their tones stretched, or null when nothing needs
+   * doing. Pixels only: most steps read pixels, so writing them back into a
+   * canvas (and reading them out again) is left to toCanvas, for the steps that
+   * draw from a canvas.
+   */
+  stretch(key: string, source: HTMLCanvasElement, w: number, h: number, time: number): ImageData | null {
     const { lo, hi } = this.levels(key, source, w, h, time);
-    if (lo <= 0.001 && hi >= 0.999) return source;
-    const c = this.out;
-    if (c.width !== w) c.width = w;
-    if (c.height !== h) c.height = h;
-    const g = get2d(c, true);
+    if (lo <= 0.001 && hi >= 0.999) return null;
     const im = get2d(source, true).getImageData(0, 0, w, h), d = im.data;
     const lut = new Uint8ClampedArray(256), a = lo * 255, k = 1 / Math.max(1e-3, hi - lo);
     for (let v = 0; v < 256; v++) lut[v] = (v - a) * k;
     for (let i = 0; i < d.length; i += 4) { d[i] = lut[d[i]]; d[i + 1] = lut[d[i + 1]]; d[i + 2] = lut[d[i + 2]]; }
-    g.putImageData(im, 0, 0);
+    return im;
+  }
+
+  /** Stretched pixels as a canvas, for steps that draw from one. */
+  toCanvas(im: ImageData): HTMLCanvasElement {
+    const c = this.out;
+    if (c.width !== im.width) c.width = im.width;
+    if (c.height !== im.height) c.height = im.height;
+    get2d(c, true).putImageData(im, 0, 0);
     return c;
+  }
+
+  /** The source with its tones stretched, or the source itself when nothing needs doing. */
+  apply(key: string, source: HTMLCanvasElement, w: number, h: number, time: number): HTMLCanvasElement {
+    const im = this.stretch(key, source, w, h, time);
+    return im ? this.toCanvas(im) : source;
   }
 
   clear() { this.mem.clear(); this.out.width = this.out.height = 1; }

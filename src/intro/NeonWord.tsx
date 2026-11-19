@@ -2,11 +2,10 @@ import { useEffect, useRef } from 'react';
 import { WORD_PATH } from '../components/logoPaths';
 
 /**
- * The front-page AirFx lettering as a lime neon sign that melts under the cursor.
+ * The front-page AirFx lettering, in flat brand lime, melting under the cursor.
  *
- * Look (after the neon-sign reference): a solid lime core that runs white-hot
- * deep inside, and a glow around it mapped black → dark green → lime, cut into
- * horizontal scanline stripes.
+ * Look: the flat brand-lime lettering, exactly like the vector wordmark, with
+ * nothing around it (no glow, box or stripes).
  *
  * Interaction (after the liquid-type reference): the pointer carries an
  * invisible liquid blob with a short trail. On its own it is too weak to show;
@@ -14,8 +13,8 @@ import { WORD_PATH } from '../components/logoPaths';
  * their counters like liquid, then settle back into clean type when it leaves.
  * Touch works the same with a finger.
  *
- * How: the lettering is drawn once as a mask, blurred twice on the GPU (a small
- * blur gives the liquid edge, a large one the glow), and a single shader adds the
+ * How: the lettering is drawn once as a mask, blurred on the GPU to give it a liquid
+ * edge, and a single shader adds the
  * blob and thresholds the sum each frame. It only animates while the blob is
  * moving or fading; it stops off screen and in hidden tabs, draws one still frame
  * under reduced motion, and leaves the plain vector wordmark in place when WebGL2
@@ -47,15 +46,10 @@ void main() {
 const NEON = `#version 300 es
 precision highp float;
 in vec2 uv; out vec4 o;
-uniform sampler2D edge, glow;
+uniform sampler2D edge;
 uniform vec2 res;
 uniform vec4 blob[${TRAIL}];
-uniform float stripe, time, power;
-vec3 ramp(float t) {
-  vec3 a = vec3(0.0), b = vec3(0.03, 0.16, 0.05), c = vec3(0.776, 1.0, 0.18), d = vec3(1.0);
-  t = clamp(t, 0.0, 1.0);
-  return t < 0.4 ? mix(a, b, t / 0.4) : t < 0.85 ? mix(b, c, (t - 0.4) / 0.45) : mix(c, d, (t - 0.85) / 0.15 * 0.5);
-}
+uniform float power;
 void main() {
   vec2 px = vec2(gl_FragCoord.x, res.y - gl_FragCoord.y);
   float m = 0.0;
@@ -63,20 +57,10 @@ void main() {
   float e = texture(edge, uv).r;
   // The blob only shows where it meets the letters: alone it stays under the threshold.
   float f = e + m * (0.62 + e);
-  float g = texture(glow, uv).r + m * 0.5;
   float aa = max(fwidth(f), 1e-4);
-  float core = smoothstep(0.5 - aa, 0.5 + aa, f);
-  float hot = smoothstep(0.85, 1.2, e);
-  // Scanlines: strong in the glow, faint across the letters so they stay solid.
-  float s = 0.5 + 0.5 * cos(px.y / stripe * 6.2831853);
-  float lines = smoothstep(0.15, 0.85, s);
-  float flick = 0.97 + 0.03 * sin(time * 7.3) * sin(time * 2.1);
-  float gl = pow(g, 0.8) * 1.5 * mix(0.2, 1.0, lines) * power * flick;
-  vec3 halo = ramp(gl) * smoothstep(0.02, 0.3, gl);
-  vec3 body = mix(vec3(0.776, 1.0, 0.18), vec3(0.93, 1.0, 0.72), hot * 0.35) * (0.86 + 0.14 * lines) * power;
-  vec3 col = mix(halo, body, core);
-  float a = max(core * power, max(col.r, max(col.g, col.b)));
-  o = vec4(col, a);
+  float core = smoothstep(0.5 - aa, 0.5 + aa, f) * power;
+  // Flat brand lime with nothing around the letters: no glow, box, stripes or tint.
+  o = vec4(0.776, 1.0, 0.18, core);
 }`;
 
 function compile(gl: WebGL2RenderingContext, frag: string) {
@@ -103,14 +87,14 @@ export function NeonWord({ onReady }: { onReady?: (ok: boolean) => void }) {
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     const tex = () => { const t = gl.createTexture()!; gl.bindTexture(gl.TEXTURE_2D, t); for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v); return t; };
     const target = (w: number, h: number) => { const t = tex(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); const f = gl.createFramebuffer()!; gl.bindFramebuffer(gl.FRAMEBUFFER, f); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0); return { t, f }; };
-    let W = 0, H = 0, wordH = 1, edge: WebGLTexture | null = null, glow: WebGLTexture | null = null, made: (WebGLTexture | WebGLFramebuffer)[] = [];
+    let W = 0, H = 0, wordH = 1, edge: WebGLTexture | null = null, made: (WebGLTexture | WebGLFramebuffer)[] = [];
     const drop = () => { for (const x of made) { if (x instanceof WebGLTexture) gl.deleteTexture(x); else gl.deleteFramebuffer(x); } made = []; };
 
     // Lay the canvas over the wordmark with room for the glow, then build the blurred masks.
     const layout = () => {
       const hb = host.getBoundingClientRect(), wb = word.getBoundingClientRect();
       if (!wb.width) return false;
-      const pad = wb.height * 0.45, dpr = Math.min(2, devicePixelRatio || 1);
+      const pad = wb.height * 0.3, dpr = Math.min(2, devicePixelRatio || 1);
       Object.assign(canvas.style, { left: `${wb.left - hb.left - pad}px`, top: `${wb.top - hb.top - pad}px`, width: `${wb.width + pad * 2}px`, height: `${wb.height + pad * 2}px` });
       W = Math.round((wb.width + pad * 2) * dpr); H = Math.round((wb.height + pad * 2) * dpr); wordH = wb.height * dpr;
       canvas.width = W; canvas.height = H;
@@ -133,38 +117,32 @@ export function NeonWord({ onReady }: { onReady?: (ok: boolean) => void }) {
         return b.t;
       };
       // Sizes follow the lettering, so the look is the same on any screen.
-      edge = blur(src, Math.max(1, wordH * 0.022));
-      glow = blur(blur(src, Math.min(64, wordH * 0.12)), Math.min(64, wordH * 0.12));
+      edge = blur(src, Math.max(1, wordH * 0.016));
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       return true;
     };
 
     // The blob: a sprung point with a short trail, and an amount that fades in and out.
     const tgt = { x: -1e4, y: -1e4 }, pos = { x: -1e4, y: -1e4 }, vel = { x: 0, y: 0 }, trail = Array.from({ length: TRAIL }, () => ({ x: -1e4, y: -1e4 }));
-    let amount = 0, want = 0, power = still ? 1 : 0, last = 0, raf = 0, visible = true, t0 = performance.now();
+    let amount = 0, want = 0, last = 0, raf = 0, visible = true;
+    const power = 1;
     const blobs = new Float32Array(TRAIL * 4);
-    const draw = (now: number) => {
-      if (!W || !edge || !glow) return;
+    const draw = () => {
+      if (!W || !edge) return;
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, H);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       gl.useProgram(neonP);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, edge); gl.uniform1i(gl.getUniformLocation(neonP, 'edge'), 0);
-      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, glow); gl.uniform1i(gl.getUniformLocation(neonP, 'glow'), 1);
       gl.uniform2f(gl.getUniformLocation(neonP, 'res'), W, H);
       const s0 = wordH * 0.22;
       trail.forEach((p, i) => { blobs.set([p.x, p.y, amount * (0.56 - i * 0.055), s0 * (1 - i * 0.09)], i * 4); });
       gl.uniform4fv(gl.getUniformLocation(neonP, 'blob'), blobs);
-      gl.uniform1f(gl.getUniformLocation(neonP, 'stripe'), Math.max(3, wordH / 16));
-      gl.uniform1f(gl.getUniformLocation(neonP, 'time'), (now - t0) / 1000);
       gl.uniform1f(gl.getUniformLocation(neonP, 'power'), power);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
     const tick = (now: number) => {
       raf = 0;
       const dt = Math.min(0.05, last ? (now - last) / 1000 : 1 / 60); last = now;
-      // Power on: a short neon flicker, then steady.
-      const age = (now - t0) / 1000;
-      power = still ? 1 : age < 0.9 ? Math.min(1, age / 0.9) * (age < 0.5 ? (Math.sin(age * 90) > 0.2 ? 1 : 0.35) : 1) : 1;
       // Spring towards the pointer; each trail point eases after the one before it.
       if (tgt.x > -1e3) {
         if (pos.x < -1e3) { pos.x = tgt.x; pos.y = tgt.y; trail.forEach((p) => { p.x = tgt.x; p.y = tgt.y; }); }
@@ -175,8 +153,8 @@ export function NeonWord({ onReady }: { onReady?: (ok: boolean) => void }) {
         trail.forEach((p, i) => { const q = i ? trail[i - 1] : pos; p.x += (q.x - p.x) * k; p.y += (q.y - p.y) * k; });
       }
       amount += (want - amount) * (1 - Math.exp(-dt * (want > amount ? 7 : 3.5)));
-      draw(now);
-      const settling = Math.abs(want - amount) > 0.002 || Math.hypot(vel.x, vel.y) > 0.5 || age < 1 || Math.hypot(trail[TRAIL - 1].x - pos.x, trail[TRAIL - 1].y - pos.y) > 0.5;
+      draw();
+      const settling = Math.abs(want - amount) > 0.002 || Math.hypot(vel.x, vel.y) > 0.5 ||Math.hypot(trail[TRAIL - 1].x - pos.x, trail[TRAIL - 1].y - pos.y) > 0.5;
       // Stops as soon as everything has settled; the next pointer move starts it again.
       if (visible && !still && settling) raf = requestAnimationFrame(tick);
     };
@@ -195,7 +173,7 @@ export function NeonWord({ onReady }: { onReady?: (ok: boolean) => void }) {
     const leaveDoc = (e: PointerEvent) => { if (!e.relatedTarget) leave(); };
 
     let built = false;
-    const rebuild = () => { built = layout(); if (built) { onReady?.(true); draw(performance.now()); kick(); } };
+    const rebuild = () => { built = layout(); if (built) { onReady?.(true); draw(); kick(); } };
     rebuild();
     // Fonts and layout can move the wordmark after the first frame.
     const ro = new ResizeObserver(() => rebuild()); ro.observe(word);

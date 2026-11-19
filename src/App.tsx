@@ -577,6 +577,7 @@ export default function App() {
       onImport={openImport}
       onFile={handleFile}
       onStageClick={inLive ? () => undefined : transport.toggle}
+      touchUi={phone}
       onCanvasPointer={onCanvasPointer}
       toolActive={tool.kind !== 'none' || picking}
       monitorPanel={monitor ? <PerfMonitor onClose={() => setMonitor(false)} /> : null}
@@ -600,6 +601,7 @@ export default function App() {
           onMod={fx.setMod}
           onItem={(patch) => fx.selected && fx.updateItem(fx.selected.id, patch, 'item')}
           onReset={fx.resetEffect}
+          compact={phone}
         />
       </>
     ) : tab === 'adjust' ? (
@@ -662,7 +664,7 @@ export default function App() {
   if (phone) {
     const openTab = (t: MTab) => {
       if (t === mtab && t !== 'preview') { setMtab('preview'); return; }
-      if (t !== 'preview' && mtab === 'preview') setSheet('half');
+      if (t !== 'preview') setSheet(t === 'effects' ? 'full' : 'half');
       setMtab(t);
     };
     const toPreview = () => setMtab('preview');
@@ -674,7 +676,7 @@ export default function App() {
         : mode === 'key' ? <KeyPanel {...wsProps} />
         : mode === 'depth' ? <DepthPanel {...wsProps} />
         : mode === 'cleanup' ? <CleanupPanel {...wsProps} />
-        : <MobileLibrary activeId={fx.effect?.id ?? null} onPick={(id) => { fx.select(id); setTab('params'); setMtab('adjust'); }} onAdd={(id) => { fx.add(id); setTab('params'); setMtab('adjust'); }} />
+        : <MobileLibrary activeId={fx.effect?.id ?? null} onPick={(id) => { fx.select(id); setTab('params'); setSheet('half'); setMtab('adjust'); }} onAdd={(id) => { fx.add(id); setTab('params'); setSheet('half'); setMtab('adjust'); }} />
       ) : mtab === 'adjust' ? (
         <div className="madjust">
           <div className="mseg" role="tablist">

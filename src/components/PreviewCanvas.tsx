@@ -41,6 +41,11 @@ interface Props {
   toolActive?: boolean;
   /** Drawn over the image, inside the frame. */
   overlay?: ReactNode;
+  /**
+   * Phones and tablets: no toolbar row. Two floating buttons sit on the picture
+   * instead: hold to see the original, and Fit / 1:1. Pinch zooms.
+   */
+  touchUi?: boolean;
 }
 
 const ZOOM_STEPS = [0.1, 0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.5, 2, 3, 4, 6, 8];
@@ -144,7 +149,7 @@ export function PreviewCanvas(p: Props) {
         if (f) p.onFile(f);
       }}
     >
-      <div className="toolbar">
+      {!p.touchUi && <div className="toolbar">
         <div className="segmented segmented--3 segmented--compact" role="radiogroup" aria-label="Compare mode">
           {(['processed', 'split', 'original'] as CompareMode[]).map((m) => (
             <button key={m} role="radio" aria-checked={p.compare === m} className={p.compare === m ? 'on' : ''} disabled={!p.media} onClick={() => p.onCompare(m)}>
@@ -175,7 +180,7 @@ export function PreviewCanvas(p: Props) {
           <button className={`btn btn--sm ${p.zoom === 'fit' ? 'btn--on' : ''}`} disabled={!p.media} onClick={() => p.onZoom('fit')} title="Fit to screen (F)">Fit</button>
           <button className={`btn btn--sm ${p.zoom === 1 ? 'btn--on' : ''}`} disabled={!p.media} onClick={() => p.onZoom(1)} title="Actual size (1)">1:1</button>
         </div>
-      </div>
+      </div>}
 
       <div className="stage" ref={stageRef} onWheel={onWheel} tabIndex={-1} onPointerDownCapture={touchDown} onPointerMoveCapture={touchMove} onPointerUpCapture={touchUp} onPointerCancelCapture={touchUp} onDoubleClick={() => p.media && p.onZoom(p.zoom === 'fit' ? 1 : 'fit')}>
         {p.monitorPanel}
@@ -265,6 +270,27 @@ export function PreviewCanvas(p: Props) {
           <div className="stage__meta">
             <span>{p.media.name}</span>
             <span className="muted">{p.media.width} × {p.media.height}</span>
+          </div>
+        )}
+
+        {p.touchUi && p.media && (
+          <div className="pfloat">
+            {/* Press and hold to compare with the original; let go to return. */}
+            <button
+              className={`pfloat__btn ${p.compare !== 'processed' ? 'on' : ''}`}
+              aria-label="Hold to see the original"
+              onPointerDown={(e) => { e.stopPropagation(); p.onCompare('original'); try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* the release still arrives */ } }}
+              onPointerUp={(e) => { e.stopPropagation(); p.onCompare('processed'); }}
+              onPointerCancel={() => p.onCompare('processed')}
+              onClick={(e) => e.stopPropagation()}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden><path d="M12 3v18M4 6h6v12H4zM14 6h6v12h-6z" /></svg>
+              <span>{p.compare !== 'processed' ? 'Original' : 'Hold'}</span>
+            </button>
+            <button className="pfloat__btn" onClick={(e) => { e.stopPropagation(); p.onZoom(p.zoom === 'fit' ? 1 : 'fit'); }} aria-label={p.zoom === 'fit' ? 'Actual size' : 'Fit to screen'}>
+              <span>{p.zoom === 'fit' ? 'Fit' : `${Math.round(scale * 100)}%`}</span>
+            </button>
           </div>
         )}
 

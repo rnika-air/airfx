@@ -45,6 +45,7 @@ import { V43 } from './v43';
 import { AUTO_TONE } from './tone';
 import { V52 } from './v52';
 import { V53 } from './v53';
+import { POST_EFFECTS } from './post';
 
 /** The five flagship effects of v0.1. */
 export const CORE_EFFECT_IDS = ['moire', 'scatter', 'halftone', 'glitch', 'filmGrain'];
@@ -69,6 +70,7 @@ export const EFFECTS: EffectDefinition[] = [
   ...V43,
   ...V52,
   ...V53,
+  ...POST_EFFECTS,
   slide, stack, stutter,
   ...STACKS,
   adjustMaster,

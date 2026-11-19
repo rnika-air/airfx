@@ -110,19 +110,25 @@ async function decodedSource(url: string, times: number[]): Promise<FrameSource 
     input.dispose();
     return null;
   }
-  const sink = new CanvasSink(track, { poolSize: 3 });
+  // Four canvases: the frame being rendered, the one decoded ahead, and room for the decoder.
+  const sink = new CanvasSink(track, { poolSize: 4 });
   const end = await track.computeDuration(), first = await track.getFirstTimestamp();
   const gen = sink.canvasesAtTimestamps(times.map((t) => Math.min(end - 1e-3, Math.max(first, t))));
   let last: WrappedCanvas | null = null;
+  // The next frame is requested as soon as the current one is handed over, so
+  // decoding runs while the effects render instead of after them.
+  let ahead: Promise<IteratorResult<WrappedCanvas | null>> | null = null;
   return {
     decoder: 'WebCodecs',
     async at() {
-      const r = await gen.next();
+      const r = await (ahead ?? gen.next());
+      ahead = r.done ? null : gen.next();
       if (r.value) last = r.value;
       if (!last) throw new Error('The source video returned no frame.');
       return last.canvas as CanvasImageSource;
     },
     close() {
+      ahead?.catch(() => undefined);
       gen.return?.(undefined).catch(() => undefined);
       input.dispose();
     },
@@ -312,11 +318,16 @@ export async function encodeFrames(o: EncodeOptions): Promise<Blob> {
     if (audio && o.audio) await audio.add(o.audio);
     audio?.close();
     let lastYield = performance.now();
+    // The encoder's answer for the previous frame. Waiting for it just before the
+    // next hand-over keeps frames in order and respects encoder backpressure,
+    // while rendering and encoding overlap.
+    let encoding: Promise<void> | null = null;
     for (let i = 0; i < total; i++) {
       if (o.signal.aborted) throw new DOMException('Export cancelled', 'AbortError');
       const t = i / o.fps;
       await o.draw(i, t, canvas, 1 / o.fps);
-      await video.add(t, 1 / o.fps);
+      if (encoding) await encoding;
+      encoding = video.add(t, 1 / o.fps);
       const now = performance.now(), rate = (i + 1) / ((now - started) / 1000);
       if (now - lastYield > 80 || i === total - 1) {
         o.onProgress({ frame: i + 1, total, time: t, fps: rate, etaSeconds: (total - i - 1) / Math.max(1e-3, rate), stage: 'Rendering', decoder: o.decoder, encoderConfig });
@@ -324,6 +335,7 @@ export async function encodeFrames(o: EncodeOptions): Promise<Blob> {
         lastYield = performance.now();
       }
     }
+    if (encoding) await encoding;
     video.close();
     o.onProgress({ frame: total, total, time: o.duration, fps: total / ((performance.now() - started) / 1000), etaSeconds: 0, stage: 'Finishing file', decoder: o.decoder, encoderConfig });
     await output.finalize();

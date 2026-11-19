@@ -487,8 +487,8 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
   .app--phone > .mhead { grid-column: 1 / -1; grid-row: 1; padding-top: 4px; }
   .app--phone > .mstage { grid-column: 1; grid-row: 2; }
   .app--phone > .statusbar { grid-column: 1; grid-row: 3; }
-  .app--phone > .sheet { grid-column: 2; grid-row: 2 / 4; width: min(380px, 46vw); height: auto !important; border-top: 0; border-left: 1px solid var(--line-2); }
-  .app--phone > .mnav { grid-column: 1 / -1; grid-row: 4; }
+  .app--phone > .sheet { grid-column: 2; grid-row: 2 / 5; width: min(380px, 46vw); height: auto !important; border-top: 0; border-left: 1px solid var(--line-2); }
+  .app--phone > .mnav { grid-column: 1; grid-row: 4; }
   .mnav button { min-height: 44px; flex-direction: row; gap: 8px; }
 }
 
@@ -638,3 +638,46 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .sp--ready .sp__neon { animation: rise 0.9s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .sp--intro .sp__neon { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .sp--ready .sp__neon { animation: none; } }
+
+/* Centring: the faint line above the logo sits just above the group without
+   counting towards it, so the visible block (logo, text, Enter) is what gets
+   centred between the top bar and the footer, on every desktop and tablet size. */
+@media (min-width: 761px) {
+  .sp__main--stage .sp__copy { position: relative; }
+  .sp__main--stage .sp__kicker { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); }
+}
+@media (max-width: 760px) { .sp { overflow-x: hidden; } }
+
+/* ══ Phone editor, refined ═════════════════════════════════════
+   The picture gets the space: no toolbar row, no status row for stills; two
+   floating buttons on the picture (hold to compare, Fit / 1:1), pinch to zoom.
+   Panels lead with their controls. Desktop is untouched. */
+.app--phone > .statusbar:not(:has(.transport)) { display: none; }
+.pfloat { position: absolute; right: 10px; bottom: 10px; z-index: 4; display: flex; gap: 8px; }
+.pfloat__btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 40px; min-width: 44px; padding: 0 14px;
+  border: 1px solid var(--line-2); border-radius: 999px; background: rgba(11, 12, 11, 0.78); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  color: var(--text); font: 600 10px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+}
+.pfloat__btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.pfloat__btn.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+/* About & suggestions, folded under the controls. */
+.mfold { margin: 4px 14px 14px; border: 1px solid var(--line); }
+.mfold > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 14px; color: var(--text-2); font: 500 10.5px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
+.mfold > summary::-webkit-details-marker { display: none; }
+.mfold > summary::after { content: '+'; font-size: 16px; color: var(--text-3); }
+.mfold[open] > summary::after { content: '−'; }
+.mfold > .panel-desc { padding: 0 14px; }
+/* Starting points: one swipeable row instead of a block of chips. */
+.app--phone .sheet .presetchips { padding: 10px 14px 0; }
+.app--phone .sheet .presetchips .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 14px 4px; }
+.app--phone .sheet .presetchips .chips::-webkit-scrollbar { display: none; }
+.app--phone .sheet .chip { flex-shrink: 0; height: 36px; padding: 0 14px; }
+/* Library: a tighter grid, so more effects show at once. */
+.mlib__bar { gap: 8px; padding: 8px 12px; }
+.mlib__search { height: 40px !important; }
+.mlib__grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px 8px; padding: 10px 12px calc(14px + var(--safe-b)); }
+.mlib__pick { gap: 5px; }
+.mlib__pick span { min-height: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mlib__add { width: 32px; height: 32px; font-size: 18px; top: 3px; right: 3px; }

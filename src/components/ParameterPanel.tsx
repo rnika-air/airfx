@@ -20,12 +20,14 @@ interface Props {
   onMod: (key: string, mod: AudioMod | null) => void;
   onItem: (patch: Partial<StackItem>) => void;
   onReset: () => void;
+  /** Phone layout: controls first, the description and suggestions folded away. */
+  compact?: boolean;
 }
 
 const BLENDS: [GlobalCompositeOperation, string][] = [['source-over', 'Normal'], ['multiply', 'Multiply'], ['screen', 'Screen'], ['overlay', 'Overlay'], ['soft-light', 'Soft Light'], ['difference', 'Difference'], ['lighter', 'Add'], ['color', 'Color'], ['luminosity', 'Luminosity']];
 
 /** Controls of the selected stack step. */
-export function ParameterPanel({ effect, item, params, mods, hasMedia, analysis, onChange, onParams, onMod, onItem, onReset }: Props) {
+export function ParameterPanel({ effect, item, params, mods, hasMedia, analysis, onChange, onParams, onMod, onItem, onReset, compact }: Props) {
   if (!effect || !item) {
     return (
       <div className="panel-empty">
@@ -53,15 +55,18 @@ export function ParameterPanel({ effect, item, params, mods, hasMedia, analysis,
 
   return (
     <>
-      <div className="panel-head">
-        <div>
-          <span className="label label--dim">{CATEGORY_LABELS[effect.category]}</span>
-          <h2 className="panel-title">{effect.name}</h2>
+      {/* Phones: the sheet already shows the name and Reset, so the controls come first. */}
+      {!compact && (
+        <div className="panel-head">
+          <div>
+            <span className="label label--dim">{CATEGORY_LABELS[effect.category]}</span>
+            <h2 className="panel-title">{effect.name}</h2>
+          </div>
+          <button className="btn btn--sm" onClick={onReset} title="Reset parameters (R)">Reset</button>
         </div>
-        <button className="btn btn--sm" onClick={onReset} title="Reset parameters (R)">Reset</button>
-      </div>
+      )}
       <div className="sidebar__scroll">
-        <p className="panel-desc">{effect.description}</p>
+        {!compact && <p className="panel-desc">{effect.description}</p>}
         {effect.presets && (
           <div className="presetchips">
             <span className="label label--dim">Starting Points</span>
@@ -70,8 +75,15 @@ export function ParameterPanel({ effect, item, params, mods, hasMedia, analysis,
             </div>
           </div>
         )}
-        {hasMedia && analysis?.url && <Suggestions effect={effect} params={params} analysis={analysis.a} error={analysis.error} onChange={onChange} />}
+        {!compact && hasMedia && analysis?.url && <Suggestions effect={effect} params={params} analysis={analysis.a} error={analysis.error} onChange={onChange} />}
         <PropsEditor defs={effect.params} values={params} onChange={onChange} mods={mods} onMod={onMod} audioDefaults={effect.audioDefaults} />
+        {compact && (
+          <details className="mfold">
+            <summary>About this effect{hasMedia && analysis?.url ? ' · suggestions' : ''}</summary>
+            <p className="panel-desc">{effect.description}</p>
+            {hasMedia && analysis?.url && <Suggestions effect={effect} params={params} analysis={analysis.a} error={analysis.error} onChange={onChange} />}
+          </details>
+        )}
         {effect.supportsContent && params.cMode === 'typography' && (
           <div className="presetchips">
             <span className="label label--dim">Typography Presets</span>

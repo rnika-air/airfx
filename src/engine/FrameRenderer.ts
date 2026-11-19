@@ -131,12 +131,16 @@ export class FrameRenderer {
       ctx.clearRect(0, 0, w, h);
       const params = sanitizeParams(layer.effect, layer.params);
       // Tone-driven steps see the picture with its own tones stretched (Auto Tone).
-      const from = params.autoTone === true ? this.tone.apply(`${n}:${layer.effect.id}`, cur, w, h, req.time ?? 0) : cur;
+      // The stretched pixels go straight to the step; a canvas is made from them
+      // only if the step draws from one, so most steps skip a write and a read.
+      const toned = params.autoTone === true ? this.tone.stretch(`${n}:${layer.effect.id}`, cur, w, h, req.time ?? 0) : null;
+      const tone = this.tone;
+      let fromCanvas: HTMLCanvasElement | null = toned ? null : cur;
       // Pixels are read only if the step asks for them: many steps only draw the canvas.
-      let src: ImageData | null = null;
+      let src: ImageData | null = toned;
       const input = {
-        get src() { return (src ??= get2d(from, true).getImageData(0, 0, w, h)); },
-        srcCanvas: from,
+        get src() { return (src ??= get2d(cur, true).getImageData(0, 0, w, h)); },
+        get srcCanvas() { return (fromCanvas ??= tone.toCanvas(toned!)); },
         ctx,
         width: w,
         height: h,

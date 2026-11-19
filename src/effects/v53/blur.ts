@@ -162,11 +162,14 @@ export const radialBlur: EffectDefinition = {
 
 export const focusBlur: EffectDefinition = {
   id: 'focusBlur', name: 'Focus & Motion Blur', category: 'distortion',
-  description: 'Gaussian, motion and tilt-shift blur: soften, add speed, or turn a scene into a miniature.',
+  description: 'Gaussian, motion, tilt-shift, lens (bokeh) and progressive blur: soften, add speed, defocus like a lens, or turn a scene into a miniature.',
   params: [
-    S('mode', 'Mode', 'tiltShift', [['gaussian', 'Gaussian'], ['motion', 'Motion'], ['tiltShift', 'Tilt-Shift']], 'Blur'),
+    S('mode', 'Mode', 'tiltShift', [['gaussian', 'Gaussian'], ['motion', 'Motion'], ['tiltShift', 'Tilt-Shift'], ['lens', 'Lens (Bokeh)'], ['progressive', 'Progressive']], 'Blur'),
     R('radius', 'Blur', 0, 60, 0.1, 14, 'Blur'),
-    R('angle', 'Angle', 0, 180, 0.5, 0, 'Blur', 'Motion direction, or the tilt of the sharp band.'),
+    R('angle', 'Angle', 0, 360, 0.5, 0, 'Blur', 'Motion direction, the tilt of the sharp band, or the direction a progressive blur grows in.'),
+    { ...R('bokeh', 'Bokeh Highlights', 0, 1, 0.01, 0.5, 'Blur', 'Bright points open into round discs, as a real lens does.'), visibleWhen: (v) => v.mode === 'lens' },
+    { ...R('near', 'Blur At Start', 0, 1, 0.01, 0, 'Blur'), visibleWhen: (v) => v.mode === 'progressive' },
+    { ...R('far', 'Blur At End', 0, 1, 0.01, 1, 'Blur'), visibleWhen: (v) => v.mode === 'progressive' },
     R('samples', 'Quality', 6, 64, 1, 24, 'Blur'),
     R('focus', 'Focus Position', 0, 1, 0.005, 0.55, 'Focus'),
     R('band', 'Sharp Band', 0, 0.8, 0.005, 0.14, 'Focus'),
@@ -179,6 +182,8 @@ export const focusBlur: EffectDefinition = {
     { name: 'Dreamy Soft', values: { mode: 'gaussian', radius: 8, saturation: 1.05, contrast: 0.95 } },
     { name: 'Speed', values: { mode: 'motion', radius: 34, angle: 0, saturation: 1, contrast: 1 } },
     { name: 'Diagonal Rush', values: { mode: 'motion', radius: 22, angle: 35, saturation: 1.1, contrast: 1.05 } },
+    { name: 'Lens Bokeh', values: { mode: 'lens', radius: 18, bokeh: 0.7, saturation: 1.05, contrast: 1 } },
+    { name: 'Fade To Soft', values: { mode: 'progressive', radius: 24, angle: 90, near: 0, far: 1, saturation: 1, contrast: 1 } },
   ],
   render({ srcCanvas, ctx, width: w, height: h, params: p, unit }) {
     const mode = p.mode as string, rad = (p.radius as number) * unit, ang = ((p.angle as number) * Math.PI) / 180;
@@ -188,7 +193,51 @@ export const focusBlur: EffectDefinition = {
     if (mode === 'motion') {
       const n = Math.round(p.samples as number), dx = Math.cos(ang) * rad * 2, dy = Math.sin(ang) * rad * 2;
       blurred = accumulate(srcCanvas, w, h, n, (g, t) => g.translate(dx * t, dy * t), Math.ceil(rad * 1.2) + 2);
+    } else if (mode === 'lens') {
+      // A lens defocuses through its aperture: the average of copies spread evenly over a
+      // disc (a sunflower spiral), so a point of light becomes a round disc. Highlights
+      // are pushed up first, so they open into bright bokeh instead of fading.
+      let from: CanvasImageSource = srcCanvas, boosted: HTMLCanvasElement | null = null;
+      if ((p.bokeh as number) > 0.01) {
+        boosted = createCanvas(w, h);
+        const b = get2d(boosted), hi = highlights(srcCanvas, w, h, 0.55);
+        b.drawImage(srcCanvas, 0, 0, w, h);
+        b.globalCompositeOperation = 'lighter';
+        b.globalAlpha = Math.min(1, (p.bokeh as number) * 1.6);
+        b.drawImage(hi, 0, 0);
+        hi.width = hi.height = 1;
+        from = boosted;
+      }
+      const n = Math.max(12, Math.round((p.samples as number) * 1.5));
+      blurred = accumulate(from, w, h, n, (g, t) => {
+        const i = (t + 0.5) * (n - 1), r = Math.sqrt((i + 0.5) / n) * rad, a = i * 2.399963;
+        g.translate(Math.cos(a) * r, Math.sin(a) * r);
+      }, Math.ceil(rad) + 2);
+      if (boosted) boosted.width = boosted.height = 1;
     } else blurred = gaussian(srcCanvas, w, h, rad * 0.5);
+    if (mode === 'progressive') {
+      // Blur that grows across the frame: sharp, half and full blur, crossfaded along the angle.
+      const half = gaussian(srcCanvas, w, h, rad * 0.25);
+      const a0 = ang, ux = Math.cos(a0), uy = Math.sin(a0), L = Math.abs(ux) * w + Math.abs(uy) * h;
+      const x0 = w / 2 - (ux * L) / 2, y0 = h / 2 - (uy * L) / 2, x1 = w / 2 + (ux * L) / 2, y1 = h / 2 + (uy * L) / 2;
+      const near = p.near as number, far = p.far as number;
+      const layer = (img: CanvasImageSource, k: (s: number) => number) => {
+        const c = createCanvas(w, h), g = get2d(c);
+        g.drawImage(img, 0, 0, w, h);
+        g.globalCompositeOperation = 'destination-in';
+        const grad = g.createLinearGradient(x0, y0, x1, y1);
+        for (let i = 0; i <= 12; i++) { const t = i / 12, s = near + (far - near) * t; grad.addColorStop(t, `rgba(0,0,0,${Math.min(1, Math.max(0, k(s))).toFixed(4)})`); }
+        g.fillStyle = grad; g.fillRect(0, 0, w, h);
+        return c;
+      };
+      ctx.filter = look;
+      ctx.drawImage(srcCanvas, 0, 0);
+      const hl = layer(half, (s) => s * 2), fl = layer(blurred, (s) => s * 2 - 1);
+      ctx.drawImage(hl, 0, 0); ctx.drawImage(fl, 0, 0);
+      ctx.filter = 'none';
+      for (const c of [hl, fl, half, blurred]) c.width = c.height = 1;
+      return;
+    }
     ctx.filter = look;
     ctx.drawImage(blurred, 0, 0);
     if (mode === 'tiltShift') {

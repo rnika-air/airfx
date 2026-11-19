@@ -5,13 +5,13 @@ import { GLSL_COMMON, gpuEffect } from '../engine/gpu';
 
 /** Chromatic aberration, per pixel: red pushed out, blue pulled in, green and alpha kept. */
 const CHROMA_GLSL = GLSL_COMMON + `
-uniform sampler2D u_tex0; uniform vec2 u_c; uniform float u_amt, u_f, u_R;
+uniform sampler2D u_tex0; uniform vec2 u_c, u_lin; uniform float u_amt, u_f, u_R;
 void main() {
   ivec2 p = px(); float dx = float(p.x) - u_c.x, dy = float(p.y) - u_c.y;
   float k = pow(length(vec2(dx, dy)) / u_R, u_f) * u_amt;
   vec4 s = texelFetch(u_tex0, p, 0);
-  float r = bilinear(u_tex0, u_c.x + dx * (1.0 + k), u_c.y + dy * (1.0 + k)).r;
-  float b = bilinear(u_tex0, u_c.x + dx * (1.0 - k), u_c.y + dy * (1.0 - k)).b;
+  float r = bilinear(u_tex0, u_c.x + dx * (1.0 + k) - u_lin.x, u_c.y + dy * (1.0 + k) - u_lin.y).r;
+  float b = bilinear(u_tex0, u_c.x + dx * (1.0 - k) + u_lin.x, u_c.y + dy * (1.0 - k) + u_lin.y).b;
   outColor = vec4(r / 255.0, s.g, b / 255.0, s.a);
 }`;
 
@@ -281,10 +281,13 @@ export const chromaticAb: EffectDefinition = {
   id: 'chromaticAb',
   name: 'Chromatic Aberration',
   category: 'light',
-  description: 'Lens fringing: colour channels scale differently from an optical centre.',
+  description: 'Colour fringing: channels scale apart from an optical centre (lens), shift apart along an angle (linear), or both.',
   audioDefaults: { amount: { band: 'bass', amount: 0.3 } },
   params: [
-    { key: 'amount', label: 'Chromatic Separation', type: 'range', group: 'Lens', min: -40, max: 40, step: 0.25, default: 4 },
+    { key: 'mode', label: 'Type', type: 'select', group: 'Lens', default: 'radial', options: [{ value: 'radial', label: 'Lens (From The Centre)' }, { value: 'linear', label: 'Linear (Along An Angle)' }, { value: 'both', label: 'Both' }] },
+    { key: 'amount', label: 'Chromatic Separation', type: 'range', group: 'Lens', min: -40, max: 40, step: 0.25, default: 4, visibleWhen: (v) => v.mode !== 'linear' },
+    { key: 'offset', label: 'Linear Offset', type: 'range', group: 'Lens', min: 0, max: 40, step: 0.25, default: 6, visibleWhen: (v) => v.mode !== 'radial' },
+    { key: 'angle', label: 'Angle', type: 'range', group: 'Lens', min: 0, max: 360, step: 1, default: 0, unit: '°', visibleWhen: (v) => v.mode !== 'radial' },
     { key: 'cx', label: 'Center X', type: 'range', group: 'Lens', min: 0, max: 1, step: 0.005, default: 0.5 },
     { key: 'cy', label: 'Center Y', type: 'range', group: 'Lens', min: 0, max: 1, step: 0.005, default: 0.5 },
     { key: 'falloff', label: 'Edge Falloff', type: 'range', group: 'Lens', min: 0.2, max: 4, step: 0.01, default: 1.6 },
@@ -292,21 +295,25 @@ export const chromaticAb: EffectDefinition = {
   render(input) {
     const { ctx, width, height, params: p } = input;
     // A fraction of the radius, so the fringe scales with the picture. 0.0516 is the old preview strength.
-    const amt = (p.amount as number) * 0.0516;
+    const mode = (p.mode as string) ?? 'radial';
+    const amt = mode === 'linear' ? 0 : (p.amount as number) * 0.0516;
     const cx = (p.cx as number) * width, cy = (p.cy as number) * height, f = p.falloff as number;
     const R = Math.hypot(width, height) / 2;
+    // Linear: red one way along the angle, blue the other, in units so exports match.
+    const a = (((p.angle as number) ?? 0) * Math.PI) / 180, lo = mode === 'radial' ? 0 : ((p.offset as number) ?? 0) * Math.max(width, height) / 1000;
+    const lx = Math.cos(a) * lo, ly = Math.sin(a) * lo;
     // On the GPU when it can (the same maths, per pixel); otherwise the loop below.
-    if (gpuEffect(CHROMA_GLSL, input.srcCanvas, ctx, width, height, { u_c: [cx, cy], u_amt: amt, u_f: f, u_R: R })) return;
+    if (gpuEffect(CHROMA_GLSL, input.srcCanvas, ctx, width, height, { u_c: [cx, cy], u_lin: [lx, ly], u_amt: amt, u_f: f, u_R: R })) return;
     const src = input.src;
     const out = ctx.createImageData(width, height), o = out.data, tmp = new Uint8ClampedArray(4), d = src.data;
     for (let y = 0; y < height; y++)
       for (let x = 0; x < width; x++) {
         const i = (y * width + x) * 4, dx = x - cx, dy = y - cy;
         const k = Math.pow(Math.hypot(dx, dy) / R, f) * amt;
-        sampleBilinear(d, width, height, cx + dx * (1 + k), cy + dy * (1 + k), tmp, 0);
+        sampleBilinear(d, width, height, cx + dx * (1 + k) - lx, cy + dy * (1 + k) - ly, tmp, 0);
         o[i] = tmp[0];
         o[i + 1] = d[i + 1];
-        sampleBilinear(d, width, height, cx + dx * (1 - k), cy + dy * (1 - k), tmp, 0);
+        sampleBilinear(d, width, height, cx + dx * (1 - k) + lx, cy + dy * (1 - k) + ly, tmp, 0);
         o[i + 2] = tmp[2];
         o[i + 3] = d[i + 3];
       }

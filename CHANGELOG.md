@@ -4,6 +4,38 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+### New finishing effects
+- Vignette: centre, size, feather, roundness (frame-shaped to circular), colour and blend, with Classic, Tight Spotlight, Soft Frame and White Fade starting points.
+- Scan Lines: spacing, thickness, soft or hard lines, horizontal or vertical, colour, blend and roll.
+- Film Dust: specks, curling hairs and long scratches, dark, light or both, new on every frame or held still.
+- Fragment: 2 to 8 overlapping offset copies (average, lighten, darken or screen), optionally circling.
+- Sharpen (in Adjust): unsharp mask with amount, radius, threshold and luminance-only.
+- Reduce Noise (in Adjust): edge-aware smoothing of grain, plus separate colour-noise smoothing.
+- Diffuse: each pixel swaps with a random neighbour; Normal, Darken Only, Lighten Only and Anisotropic.
+- Sharpen, Reduce Noise, Diffuse and Chromatic Aberration run on the GPU (1 to 3 ms on a 1080p frame instead of 100 to 560 ms), with the same result on the CPU when WebGL2 is not available.
+
+### Improved effects
+- Chromatic Aberration: new Linear type (colour split along any angle) and Both (lens and linear together).
+- Focus & Motion Blur: new Lens (Bokeh) mode, where bright points open into round discs, and Progressive mode, where blur grows across the frame from one side to the other; the angle now covers 360°.
+- Levels: separate red, green and blue levels after the composite, as in Photoshop.
+
+### Intro
+- The front-page logo is the flat brand-lime AirFx lettering again, with nothing around it: the glow, scanlines and the dark box they made are gone. The letters still melt under the cursor or a finger.
+- The logo, intro text and Enter are centred between the top bar and the footer at every size (checked from 1280 × 640 to 2560 × 1440, on tablets and on phones). The faint line above the logo no longer counts towards the centring, so the visible block is what sits in the middle. Phones can no longer be dragged sideways.
+
+### Faster rendering
+- Colour effects work out each distinct colour once instead of every pixel: Hue / Saturation, Color & Vibrance, Color Balance, Black & White, Photo Filter, Channel Mixer, Color Lookup, Selective Color, Gradient Map, Light, Invert, Threshold and Duotone. Results are bit-for-bit identical. Hue / Saturation on a 1080p frame: 177 → 64 ms on the first frame, then 26 ms on every following frame of a video.
+- Levels, Curves, Exposure and Posterize apply their exact tone tables without a call per pixel.
+- Auto Tone (on by default for 38 effects) hands its stretched pixels straight to the effect instead of writing them to a canvas and reading them back.
+- Video export decodes the next frame and encodes the previous one while the current frame renders.
+- Measured on real 1080p exports (same machine, same conditions): a colour grade (Hue / Saturation + Color + Levels) 3.7 → 13.8 frames per second; Halftone 24.9 → 28.7; Duotone + Film Grain 17.6 → 20.6; 4K Halftone 8.4 → 9.8. Every one of the 135 effects was checked against the previous version and renders identically.
+
+### Phones and tablets
+- The picture takes the whole space between the top bar and the tabs: the desktop toolbar row is gone, and for stills so is the status row. Two buttons float on the picture: press and hold to see the original, and Fit / 1:1. Pinch zooms as before.
+- Adjust leads with the controls: the effect's name and Reset are in the panel header, starting points are one swipeable row, and the description and picture suggestions fold into a single line under the controls.
+- Effects opens taller, with a tighter grid, so two full rows of effects show at once (one before) and names stay on one line.
+- In landscape the tabs no longer run under the side panel.
+- The desktop editor is unchanged.
 
 ## v5.4.1 (2026-11-18)
 ### Intro
