@@ -681,3 +681,6 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .sp--ready .sp__neon { animation: rise 0.9s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .sp--intro .sp__neon { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .sp--ready .sp__neon { animation: none; } }
+
+/* The footer line sits in the middle, under the centred front page. */
+.sp__base { justify-content: center; text-align: center; }
