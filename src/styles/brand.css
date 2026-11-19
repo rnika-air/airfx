@@ -672,3 +672,12 @@ body:has(.app--phone) { overflow: hidden; overscroll-behavior: none; }
 .mlib__pick { gap: 5px; }
 .mlib__pick span { min-height: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mlib__add { width: 32px; height: 32px; font-size: 18px; top: 3px; right: 3px; }
+
+/* Neon wordmark (NeonWord): the canvas sits over the vector lettering, with room for
+   its glow, and never takes pointer input, so Enter and the cards stay clickable. */
+.sp__main--stage .sp__lockup { position: relative; }
+.sp__neon { position: absolute; z-index: 1; pointer-events: none; display: block; background: transparent; }
+.sp__lockup--neon .sp__word { visibility: hidden; }
+.sp--ready .sp__neon { animation: rise 0.9s 0.08s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.sp--intro .sp__neon { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .sp--ready .sp__neon { animation: none; } }

@@ -5,7 +5,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 
 ## Unreleased
 ### Intro
-- Fixed: on some browsers the front-page logo showed as a solid lime box covering the screen. The logo is the plain vector AirFx lettering again, as before the melting experiment, and draws the same everywhere.
+- The neon AirFx logo is back (lime lettering, scanline glow, letters that melt under the cursor or a finger), as in v5.4.1.
+- Fixed: on some browsers the logo drew a box around itself (dark in v5.4.1, solid lime in v5.5.0). Its canvas now hands the browser premultiplied colour, so everywhere outside the glow is truly transparent in every browser.
 
 ## v5.5.0 (2026-11-19)
 ### New finishing effects

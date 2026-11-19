@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
 import { HomeLogo } from '../components/Wordmark';
 import { WORD_PATH } from '../components/logoPaths';
 import { LIBRARY } from '../effects/registry';
@@ -9,6 +9,7 @@ import { CREATOR, INTRO_TEXT } from '../about/config';
 import { previews, type Preview } from './previews';
 import { LiveFx, TYPE_NAME } from './LiveFx';
 import { DotField, DOT_INTRO_SECONDS } from './DotField';
+import { NeonWord } from './NeonWord';
 
 /**
  * The way into AirFx: an intro screen, the log-in / sign-up screen that
@@ -82,13 +83,18 @@ function Ticker() {
 /**
  * The front page's centrepiece: the AirFx lettering from the logo artwork, as
  * large as the screen allows, in lime. It is vector, so it is sharp at any size.
- * The original A mark stays in the top bar.
+ * The original A mark stays in the top bar. Where WebGL2 runs, it is drawn as a
+ * lime neon sign with scanline glow that melts under the cursor (NeonWord); the
+ * vector wordmark stays underneath for layout and as the fallback.
  */
 function Lockup() {
+  const [neon, setNeon] = useState(false);
+  const ready = useCallback((ok: boolean) => setNeon(ok), []);
   return (
-    <h1 className="sp__lockup">
+    <h1 className={`sp__lockup${neon ? ' sp__lockup--neon' : ''}`}>
       <span className="sr-only">AirFx</span>
       <svg className="sp__word" viewBox="411 2046 847 217" aria-hidden><path d={WORD_PATH} fillRule="evenodd" /></svg>
+      <NeonWord onReady={ready} />
     </h1>
   );
 }
