@@ -4,6 +4,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+
+## v5.5.1 (2026-11-19)
 ### Intro
 - The neon AirFx logo is back (lime lettering, scanline glow, letters that melt under the cursor or a finger), as in v5.4.1.
 - Fixed: on some browsers the logo drew a box around itself (dark in v5.4.1, solid lime in v5.5.0). Its canvas now hands the browser premultiplied colour, so everywhere outside the glow is truly transparent in every browser.
