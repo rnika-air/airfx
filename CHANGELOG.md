@@ -4,6 +4,8 @@ Each release's section becomes its GitHub Release notes. Write changes under
 **Unreleased** as you go; `npm run release` turns that into the new version.
 
 ## Unreleased
+
+## v5.5.0 (2026-11-19)
 ### New finishing effects
 - Vignette: centre, size, feather, roundness (frame-shaped to circular), colour and blend, with Classic, Tight Spotlight, Soft Frame and White Fade starting points.
 - Scan Lines: spacing, thickness, soft or hard lines, horizontal or vertical, colour, blend and roll.
